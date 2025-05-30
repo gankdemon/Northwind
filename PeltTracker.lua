@@ -1,4 +1,4 @@
-local PeltTracker = {}Add commentMore actions
+local PeltTracker = {}
 function PeltTracker.init()
 --// ANIMAL PELT TRACKER with Supercharged Extras v1.16.1 //--  
 
