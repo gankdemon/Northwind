@@ -53,3 +53,5 @@ local Teleporter = fetchModule(teleporterUrl)
 Staff.init()
 Pelt.init()
 Teleporter.init()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
