@@ -2,6 +2,7 @@ local PeltTracker = {}
 function PeltTracker.init()
 
 
+
 --// ANIMAL PELT TRACKER with Supercharged Extras v1.16.1 //--  
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
@@ -9,8 +10,8 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace        = game:GetService("Workspace")
 local RunService       = game:GetService("RunService")
 
-local PeltTracker = {}
-function PeltTracker.init()
+local PeltTracker1 = {}
+function PeltTracker1.init()
     print("[PeltTracker] Supercharged v1.16.1 starting...")
 
     -- CONFIG
@@ -1081,5 +1082,5 @@ function PeltTracker.init()
 end
 
 -- Run immediately on paste
-PeltTracker.init()
+PeltTracker1.init()
 return PeltTracker
