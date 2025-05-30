@@ -1,4 +1,5 @@
--- PeltTracker.lua
+local PeltTracker = {}Add commentMore actions
+function PeltTracker.init()
 --// ANIMAL PELT TRACKER with Supercharged Extras v1.16.1 //--  
 
 local Players          = game:GetService("Players")
