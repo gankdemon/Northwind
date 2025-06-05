@@ -440,7 +440,7 @@ RunService.Heartbeat:Connect(onHeartbeat)
 
 -- TOGGLE GUI WITH F7
 UserInputService.InputBegan:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.Keyboard and inp.KeyCode == Enum.KeyCode.F7 then
+    if inp.UserInputType == Enum.UserInputType.Keyboard and inp.KeyCode == Enum.KeyCode.F5 then
         createTrackerGui()
     end
 end)
