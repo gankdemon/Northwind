@@ -231,7 +231,7 @@ end
 
 -- [[ EVENTS & INIT ]]
 UserInputService.InputBegan:Connect(function(inp,gp)
-    if not gp and inp.KeyCode==Enum.KeyCode.F6 then createTrackerGui() end
+    if not gp and inp.KeyCode==Enum.KeyCode.F5 then createTrackerGui() end
 end)
 Players.PlayerAdded:Connect(function(plr) wait(1) if staffMembers[plr.UserId]then alertStaff(plr.UserId) end end)
 spawn(function() loadStaffMembers(); wait(1)
