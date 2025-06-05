@@ -1,8 +1,7 @@
--- PeltTracker.lua (original layout/logic, with ESP & tracer adapted from TreasureTracker but using GREEN)
-
+-- PeltTracker with new exotic and common pelts v1.17.0
 local PeltTracker = {}
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //-- 
+    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--
     print("[PeltTracker] Supercharged v1.17.0 starting...")
 
     -- CONFIG
@@ -45,7 +44,7 @@ function PeltTracker.init()
     local animalData     = {}  -- folder → { torso, color, isExotic, markers }
     local buttonMap      = {}  -- folder → TextButton
     local isConfirming   = {}  -- button → bool
-    local tracerData     = {}  -- folder → { adorn, line }
+    local tracerData     = {}  -- folder → { box, line, btn }
     local trackerGui, trackerOpen, listFrame
     local rebuildPending = false
     local minimized      = false
@@ -92,7 +91,7 @@ function PeltTracker.init()
         return "Unknown", false
     end
 
-    -- Notification UI (unchanged)
+    -- Notification UI
     local function createNotification(title, message, bg)
         local gui = Instance.new("ScreenGui", PlayerGui); gui.ResetOnSpawn = false
         local f = Instance.new("Frame", gui)
@@ -130,7 +129,7 @@ function PeltTracker.init()
         end)
     end
 
-    -- SCAN ANIMALS (unchanged)
+    -- SCAN ANIMALS
     local function scanAll()
         animalData = {}
         local azureList, crimsonList, whiteList, polarList = {}, {}, {}, {}
@@ -159,108 +158,43 @@ function PeltTracker.init()
         return azureList, crimsonList, whiteList, polarList
     end
 
-    -------------------------
-    -- ESP & TRACER (only these functions were adapted) --
-    -------------------------
-
-    -- Create a green BoxHandleAdornment around the torso (from TreasureTracker logic, but GREEN)
-    local function createESPAdornment(folder)
-        local info = animalData[folder]
-        if not (info and info.torso) then
-            return nil
-        end
-        local torso = info.torso
-
-        -- Remove old adornment if exists
-        if torso:FindFirstChild("__PeltESP") then
-            torso:FindFirstChild("__PeltESP"):Destroy()
-        end
-
-        local adorn = Instance.new("BoxHandleAdornment")
-        adorn.Name         = "__PeltESP"
-        adorn.Adornee      = torso
-        adorn.AlwaysOnTop  = true
-        adorn.ZIndex       = 10
-        adorn.Size         = torso.Size * 5
-        adorn.Color3       = Color3.fromRGB(57, 255, 20)  -- GREEN
-        adorn.Transparency = 0.7
-        adorn.Parent       = torso
-        return adorn
-    end
-
-    -- Create a GREEN tracer line from center to torso (TreasureTracker style)
-    local function createTracer(folder)
-        local info = animalData[folder]
-        if not (info and info.torso) then return nil end
-        if type(Drawing) ~= "table" then return nil end
-        local torso = info.torso
-
-        -- Remove old tracer if present
-        if tracerData[folder] and tracerData[folder].line then
-            local oldLine = tracerData[folder].line
-            if oldLine.__conn then oldLine.__conn:Disconnect() end
-            oldLine.Visible = false
-            oldLine:Remove()
-        end
-
-        local line = Drawing.new("Line")
-        line.Color        = Color3.fromRGB(57, 255, 20)  -- GREEN
-        line.Thickness    = 2
-        line.Transparency = 1
-        line.Visible      = true
-
-        local conn
-        conn = RunService.RenderStepped:Connect(function()
-            if not line.Visible then
-                conn:Disconnect()
-                return
-            end
-            local cam    = Workspace.CurrentCamera
-            local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
-            local pos, onScreen = cam:WorldToViewportPoint(torso.Position + Vector3.new(0, torso.Size.Y/2, 0))
-            if onScreen then
-                line.From    = center
-                line.To      = Vector2.new(pos.X, pos.Y)
-                line.Visible = true
-            else
-                line.Visible = false
-            end
-        end)
-
-        line.__conn = conn
-        return line
-    end
-
-    -- Toggle ESP & tracer for a given folder (unchanged logic, but uses new createESPAdornment/createTracer)
-    local function toggleESP(folder)
-        local info = animalData[folder]
-        if not info then return false end
-
-        local existing = info.torso:FindFirstChild("__PeltESP")
-        if existing then
-            -- Destroy ESP adornment
-            existing:Destroy()
-            -- Remove tracer if present
-            if tracerData[folder] and tracerData[folder].line then
-                local oldLine = tracerData[folder].line
-                if oldLine.__conn then oldLine.__conn:Disconnect() end
-                oldLine.Visible = false
-                oldLine:Remove()
-            end
+-- ESP & TRACER: now restores both box + line every time
+local function toggleESP(folder)
+    local info = animalData[folder]; if not info then return false end
+    local t = info.torso
+    local existing = t:FindFirstChild("__PeltESP")
+    if existing then
+        existing:Destroy()
+        if tracerData[folder] then
+            tracerData[folder].line:Remove()
+            tracerData[folder].box:Destroy()
             tracerData[folder] = nil
-            return false
-        else
-            -- Create new ESP adornment and tracer
-            local adorn = createESPAdornment(folder)
-            local line  = createTracer(folder)
-            tracerData[folder] = { adorn = adorn, line = line }
-            return true
         end
+        return false
     end
+    -- box
+    local box = Instance.new("BoxHandleAdornment", t)
+    box.Name = "__PeltESP"
+    box.Adornee = t
+    box.AlwaysOnTop = true
+    box.ZIndex = 10
+    box.Size = t.Size * 5
+    box.Color3 = Color3.fromRGB(57,255,20)
+    box.Transparency = 0.7
+    -- tracer
+    local cam = Workspace.CurrentCamera
+    local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+    local line = Drawing.new("Line")
+    line.Visible = true
+    line.Thickness = 2
+    line.Color = box.Color3
+    line.From = center
+    line.To = center
+    tracerData[folder] = { box = box, line = line }
+    return true
+end
 
-    -------------------------
-    -- BUILD & REFRESH LIST--
-    -------------------------
+    -- BUILD & REFRESH LIST
     local function updateList()
         if not listFrame then return end
         for _, c in ipairs(listFrame:GetChildren()) do
@@ -306,136 +240,179 @@ function PeltTracker.init()
                 btn:SetAttribute("WarningIcon", "")
                 btn.Text = baseText
 
+                -- Golden text for exotics, white otherwise
                 local defaultColor = info.isExotic and Color3.fromRGB(255,215,0) or Color3.new(1,1,1)
                 btn.TextColor3 = defaultColor
 
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
                 buttonMap[folder] = btn
 
-                -- ESP toggle (left‐click), text turns GREEN when enabled
-                btn.MouseButton1Click:Connect(function()
+            -- ESP toggle (left‑click) with GREEN confirmation
+            btn.MouseButton1Click:Connect(function()
+                isConfirming[btn] = true
+                local added = toggleESP(folder)
+                if added then
+                    btn.Text = baseText.."  ✅ ESP Enabled!"
+                else
+                    btn.Text = baseText.."  ❌ ESP Disabled!"
+                end
+                btn.TextColor3 = Color3.fromRGB(50,255,50)
+                delay(1.5, function()
+                    isConfirming[btn] = nil
+                    btn.TextColor3 = info.torso:FindFirstChild("__PeltESP") and info.torso.Color or Color3.new(1,1,1)
+                    btn.Text = btn:GetAttribute("BaseText")..btn:GetAttribute("WarningIcon")
+                end)
+            end)
+
+            -- Teleport (right‑click)
+            btn.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton2 then
                     isConfirming[btn] = true
-                    local added = toggleESP(folder)
-                    if added then
-                        btn.Text = baseText.."  ✅ ESP Enabled!"
-                        btn.TextColor3 = Color3.fromRGB(57, 255, 20)  -- GREEN
-                    else
-                        btn.Text = baseText.."  ❌ ESP Disabled!"
-                        btn.TextColor3 = defaultColor
-                    end
+                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then hrp.CFrame = info.torso.CFrame + Vector3.new(0,3,0) end
+                    btn.Text = baseText.."  📍 Teleported!"
+                    btn.TextColor3 = Color3.new(1,1,0)
                     delay(1.5, function()
                         isConfirming[btn] = nil
-                        btn.TextColor3 = defaultColor
+                        btn.TextColor3 = info.torso:FindFirstChild("__PeltESP") and info.torso.Color or Color3.new(1,1,1)
                         btn.Text = btn:GetAttribute("BaseText")..btn:GetAttribute("WarningIcon")
                     end)
-                end)
+                end
+            end)
 
-                -- Teleport (right‐click)
-                btn.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                        isConfirming[btn] = true
-                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp then hrp.CFrame = info.torso.CFrame + Vector3.new(0,3,0) end
-                        btn.Text = baseText.."  📍 Teleported!"
-                        btn.TextColor3 = Color3.new(1,1,0)
-                        delay(1.5, function()
-                            isConfirming[btn] = nil
-                            btn.TextColor3 = defaultColor
-                            btn.Text = btn:GetAttribute("BaseText")..btn:GetAttribute("WarningIcon")
-                        end)
+            -- Marker toggle (middle‑click) with RED confirmation
+            btn.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton3 then
+                    isConfirming[btn] = true
+                    if info.markers then
+                        removeMapMarker(folder)
+                        btn.Text = baseText.."  ➖ Marker Removed!"
+                    else
+                        addMapMarker(folder)
+                        btn.Text = baseText.."  ➕ Marker Placed!"
                     end
-                end)
-            end
+                    btn.TextColor3 = Color3.fromRGB(255,50,50)
+                    delay(2.5, function()
+                        isConfirming[btn] = nil
+                        btn.TextColor3 = info.torso:FindFirstChild("__PeltESP") and info.torso.Color or Color3.new(1,1,1)
+                        btn.Text = btn:GetAttribute("BaseText")..btn:GetAttribute("WarningIcon")
+                    end)
+                end
+            end)
         end
     end
+end
 
-    -------------------------
-    -- CREATE / TOGGLE GUI--
-    -------------------------
-    local function createTrackerGui()
-        if trackerGui and trackerOpen then
-            trackerGui:Destroy()
-            trackerGui, trackerOpen = nil, false
-            return
-        end
-        trackerGui = Instance.new("ScreenGui", PlayerGui)
-        trackerOpen = true
+-- CREATE / TOGGLE GUI
+local function createTrackerGui()
+    if trackerGui and trackerOpen then
+        trackerGui:Destroy()
+        trackerGui, trackerOpen = nil, false
+        return
+    end
+    trackerGui = Instance.new("ScreenGui", PlayerGui)
+    trackerOpen = true
 
-        -- Main frame
-        local main = Instance.new("Frame", trackerGui)
-        main.Name = "MainFrame"
-        main.Size = UDim2.new(0,360,0,500)
-        main.Position = UDim2.new(0.65,0,0,100)  -- exact original position
-        main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-        main.BorderSizePixel = 0
-        main.Active, main.Draggable = true, true
-        local mainCorner = Instance.new("UICorner", main)
-        mainCorner.CornerRadius = UDim.new(0,8)
+    -- Main frame
+    local main = Instance.new("Frame", trackerGui)
+    main.Name = "MainFrame"
+    main.Size = UDim2.new(0,360,0,500)
+    main.AnchorPoint = Vector2.new(0, 0)
+    main.Position    = UDim2.new(0.349999994, -354, 0.400000006, -52)
 
-        -- Header & Minimize
-        local count = 0 for _ in pairs(animalData) do count += 1 end
-        local hdr = Instance.new("TextLabel", main)
-        hdr.Size = UDim2.new(0.75,-10,0,28)
-        hdr.Position = UDim2.new(0,10,0,0)
-        hdr.BackgroundTransparency = 1
-        hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
-        hdr.TextXAlignment = Enum.TextXAlignment.Left
-        hdr.Text = string.format("Tracker - %d found", count)
+    main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    main.BorderSizePixel = 0
+    main.Active, main.Draggable = true, true
+    local mainCorner = Instance.new("UICorner", main)
+    mainCorner.CornerRadius = UDim.new(0,8)
 
-        local minBtn = Instance.new("TextButton", main)
-        minBtn.Size = UDim2.new(0,28,0,28)
-        minBtn.Position = UDim2.new(1,-32,0,0)
-        minBtn.BackgroundTransparency = 1
-        minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
-        minBtn.Text = "➖"
-        minBtn.MouseButton1Click:Connect(function()
-            minimized = not minimized
-            listFrame.Visible = not minimized
-            minBtn.Text = minimized and "➕" or "➖"
-            local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
-            TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), { Size=newSize }):Play()
-            mainCorner.CornerRadius = UDim.new(0, minimized and 15 or 8)
-        end)
+    -- Header & Minimize
+    local count = 0 for _ in pairs(animalData) do count += 1 end
+    local hdr = Instance.new("TextLabel", main)
+    hdr.Size = UDim2.new(0.75,-10,0,28)
+    hdr.Position = UDim2.new(0,10,0,0)
+    hdr.BackgroundTransparency = 1
+    hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+    hdr.TextXAlignment = Enum.TextXAlignment.Left
+    hdr.Text = string.format("Tracker - %d found", count)
 
-        -- Control buttons (Scan/Refresh only)
-        local controlConfigs = {
-            { index = 4, char = "🔄", onClick = function()
+    local minBtn = Instance.new("TextButton", main)
+    minBtn.Size = UDim2.new(0,28,0,28)
+    minBtn.Position = UDim2.new(1,-32,0,0)
+    minBtn.BackgroundTransparency = 1
+    minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+    minBtn.Text = "➖"
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        listFrame.Visible = not minimized
+        minBtn.Text = minimized and "➕" or "➖"
+        local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
+        TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), { Size=newSize }):Play()
+        mainCorner.CornerRadius = UDim.new(0, minimized and 15 or 8)
+    end)
+
+    -- Control buttons (same icons order as before)
+    local btnConfigs = {
+        {
+            icon="🔊",
+            onClick=function(b)
+                soundEnabled = not soundEnabled
+                b.TextColor3 = soundEnabled and Color3.fromRGB(0,255,0) or Color3.new(1,1,1)
+            end
+        },
+        {
+            icon="⚙️",
+            onClick=function()
+                createNotification("Settings","(coming soon)", Color3.fromRGB(70,70,70))
+            end
+        },
+        {
+            icon="⏬",
+            onClick=function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then hrp.CFrame = hrp.CFrame + Vector3.new(0, TELEPORT_DOWN_DIST, 0) end
+            end
+        },
+        {
+            icon="🔄",
+            onClick=function()
                 if not rebuildPending then
                     rebuildPending = true
                     scanAll(); updateList()
                     delay(0.5, function() rebuildPending = false end)
                 end
-            end },
-        }
-        for _, cfg in ipairs(controlConfigs) do
-            local b = Instance.new("TextButton", main)
-            b.Size = UDim2.new(0,28,0,28)
-            b.Position = UDim2.new(1, -32*(cfg.index+0), 0, 0)
-            b.BackgroundTransparency = 1
-            b.Font, b.TextSize, b.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
-            b.Text = cfg.char
-            b.MouseButton1Click:Connect(function() cfg.onClick(b) end)
-        end
-
-        -- List frame
-        listFrame = Instance.new("ScrollingFrame", main)
-        listFrame.Name = "List"
-        listFrame.Size = UDim2.new(1,-16,1,-40)
-        listFrame.Position = UDim2.new(0,8,0,32)
-        listFrame.BackgroundTransparency = 1
-        listFrame.ScrollBarThickness = 6
-        Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,6)
-        local layout=Instance.new("UIListLayout", listFrame)
-        layout.Padding = UDim.new(0,4)
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            listFrame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
-        end)
-
-        updateList()
+            end
+        },
+    }
+    for i,conf in ipairs(btnConfigs) do
+        local b = Instance.new("TextButton", main)
+        b.Size = UDim2.new(0,28,0,28)
+        b.Position = UDim2.new(1,-32*(i+1),0,0)
+        b.BackgroundTransparency = 1
+        b.Font, b.TextSize, b.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+        b.Text = conf.icon
+        b.MouseButton1Click:Connect(function() conf.onClick(b) end)
     end
 
-    -- INITIAL SETUP + Notifications (unchanged)
+    -- List frame
+    listFrame = Instance.new("ScrollingFrame", main)
+    listFrame.Name = "List"
+    listFrame.Size = UDim2.new(1,-16,1,-40)
+    listFrame.Position = UDim2.new(0,8,0,32)
+    listFrame.BackgroundTransparency = 1
+    listFrame.ScrollBarThickness = 6
+    Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,6)
+    local layout=Instance.new("UIListLayout", listFrame)
+    layout.Padding = UDim.new(0,4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        listFrame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
+    end)
+
+    updateList()
+end
+
+ -- INITIAL SETUP + Notifications
     local azure, crimson, white, polar = scanAll()
     if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
     if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
@@ -446,68 +423,63 @@ function PeltTracker.init()
     end
     createTrackerGui()
 
-    -- LIVE WATCH + WARNINGS + TRACERS + SOUND (only tracer/adorn repair logic added)
-    local lw, lt = 0,0
-    RunService.Heartbeat:Connect(function(dt)
-        lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
+-- LIVE WATCH + WARNINGS + TRACERS + SOUND
+local lw, lt = 0,0
+RunService.Heartbeat:Connect(function(dt)
+    lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
 
-        if lw >= WARNING_INTERVAL then
-            lw = 0
-            local parts={}
-            for _,pl in ipairs(Players:GetPlayers()) do
-                if pl~=LocalPlayer and pl.Character then
-                    local hrp=pl.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then table.insert(parts, hrp.Position) end
-                end
+    if lw >= WARNING_INTERVAL then
+        lw = 0
+        local parts={}
+        for _,pl in ipairs(Players:GetPlayers()) do
+            if pl~=LocalPlayer and pl.Character then
+                local hrp=pl.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then table.insert(parts, hrp.Position) end
             end
-            for folder,info in pairs(animalData) do
-                local btn=buttonMap[folder]
-                if not btn or isConfirming[btn] then continue end
-                local icon=""
-                for _,p in ipairs(parts) do
-                    local d=(p - info.torso.Position).Magnitude
-                    if d<=Settings.maxTrackDist then
-                        icon=" 🚨"
-                        if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
-                            alertSound:Play(); lastAlertSound=0
-                        end
-                        break
-                    elseif d<=Settings.maxTrackDist*1.5 then
-                        icon=" ⚠️"
+        end
+        for folder,info in pairs(animalData) do
+            local btn=buttonMap[folder]
+            if not btn or isConfirming[btn] then continue end
+            local icon=""
+            for _,p in ipairs(parts) do
+                local d=(p - info.torso.Position).Magnitude
+                if d<=Settings.maxTrackDist then
+                    icon=" 🚨"
+                    if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
+                        alertSound:Play(); lastAlertSound=0
                     end
-                end
-                btn:SetAttribute("WarningIcon",icon)
-                btn.Text = btn:GetAttribute("BaseText")..icon
-            end
-        end
-
-        if lt>=TRACE_INTERVAL then
-            lt=0
-            for folder,data in pairs(tracerData) do
-                -- If tracer was removed or broken, recreate
-                if data.line and (not data.line.Visible or not data.line.__conn) then
-                    data.line:Remove()
-                    data.line = createTracer(folder)
-                end
-                -- If adorn was destroyed, recreate
-                if data.adorn then
-                    local adornee = data.adorn.Adornee
-                    if not (adornee and adornee.Parent) then
-                        data.adorn:Destroy()
-                        data.adorn = createESPAdornment(folder)
-                    end
+                    break
+                elseif d<=Settings.maxTrackDist*1.5 then
+                    icon=" ⚠️"
                 end
             end
+            btn:SetAttribute("WarningIcon",icon)
+            btn.Text = btn:GetAttribute("BaseText")..icon
         end
-    end)
+    end
 
-    -- TOGGLE GUI with F7 (unchanged)
-    scanAll(); updateList()
-    UserInputService.InputBegan:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 then
-            createTrackerGui()
+    if lt>=TRACE_INTERVAL then
+        lt=0
+        local cam=Workspace.CurrentCamera
+        local center=Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+        for folder,data in pairs(tracerData) do
+            local box = Workspace:FindFirstChild("__PeltESP", true)
+            data.line.Visible = box and true or false
+            if data.line.Visible then
+                data.line.From = center
+                local torso = animalData[folder].torso
+                local pos, vis = cam:WorldToViewportPoint(torso.Position + Vector3.new(0,torso.Size.Y/2,0))
+                if vis then data.line.To = Vector2.new(pos.X, pos.Y) end
+            end
         end
-    end)
+    end
+end)
+
+-- TOGGLE GUI with F7
+UserInputService.InputBegan:Connect(function(inp)
+    if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 then
+        createTrackerGui()
+    end
+end)
 end
-
 return PeltTracker
