@@ -1,4 +1,4 @@
--- PeltTracker with new exotic and common pelts v1.17.0
+-- PeltTracker with new exotic and common pelts v1.17
 local PeltTracker = {}
 function PeltTracker.init()
     --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--
@@ -317,7 +317,9 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name = "MainFrame"
     main.Size = UDim2.new(0,360,0,500)
+     -- ← EDITED: place PeltTracker at X=35%, Y=40% (example)
     main.AnchorPoint = Vector2.new(0, 0)
+    main.Position    = UDim2.new(0.35, 0, 0.40, 0)
     main.Position    = UDim2.new(0.349999994, -354, 0.400000006, -52)
 
     main.BackgroundColor3 = Color3.fromRGB(25,25,25)
