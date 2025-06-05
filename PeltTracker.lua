@@ -317,7 +317,10 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name = "MainFrame"
     main.Size = UDim2.new(0,360,0,500)
-    main.Position = UDim2.new(0.65,0,0,100)
+     -- ← EDITED: place PeltTracker at X=35%, Y=40% (example)
+    main.AnchorPoint = Vector2.new(0, 0)
+    main.Position    = UDim2.new(0.35, 0, 0.40, 0)
+
     main.BackgroundColor3 = Color3.fromRGB(25,25,25)
     main.BorderSizePixel = 0
     main.Active, main.Draggable = true, true
