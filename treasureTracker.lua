@@ -438,7 +438,7 @@ createTrackerGui()
 -- rebuild list if marker count changes, and reapply any missing ESP/tracer
 RunService.Heartbeat:Connect(onHeartbeat)
 
--- TOGGLE GUI WITH F7
+-- TOGGLE GUI WITH F5
 UserInputService.InputBegan:Connect(function(inp)
     if inp.UserInputType == Enum.UserInputType.Keyboard and inp.KeyCode == Enum.KeyCode.F5 then
         createTrackerGui()
