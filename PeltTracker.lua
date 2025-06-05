@@ -1,5 +1,4 @@
--- PeltTracker.lua
--- Version: v1.17.0 (only ESP & list‐entry colors changed)
+-- PeltTracker.lua (original layout/logic, with ESP & tracer adapted from TreasureTracker but using GREEN)
 
 local PeltTracker = {}
 function PeltTracker.init()
@@ -93,7 +92,7 @@ function PeltTracker.init()
         return "Unknown", false
     end
 
-    -- Notification UI
+    -- Notification UI (unchanged)
     local function createNotification(title, message, bg)
         local gui = Instance.new("ScreenGui", PlayerGui); gui.ResetOnSpawn = false
         local f = Instance.new("Frame", gui)
@@ -131,7 +130,7 @@ function PeltTracker.init()
         end)
     end
 
-    -- SCAN ANIMALS
+    -- SCAN ANIMALS (unchanged)
     local function scanAll()
         animalData = {}
         local azureList, crimsonList, whiteList, polarList = {}, {}, {}, {}
@@ -161,10 +160,10 @@ function PeltTracker.init()
     end
 
     -------------------------
-    -- ESP & TRACER CHANGES --
+    -- ESP & TRACER (only these functions were adapted) --
     -------------------------
 
-    -- Create a green BoxHandleAdornment around the torso (instead of red)
+    -- Create a green BoxHandleAdornment around the torso (from TreasureTracker logic, but GREEN)
     local function createESPAdornment(folder)
         local info = animalData[folder]
         if not (info and info.torso) then
@@ -172,32 +171,31 @@ function PeltTracker.init()
         end
         local torso = info.torso
 
-        -- Destroy any old adornment
+        -- Remove old adornment if exists
         if torso:FindFirstChild("__PeltESP") then
             torso:FindFirstChild("__PeltESP"):Destroy()
         end
 
-        -- Create new BoxHandleAdornment in green
         local adorn = Instance.new("BoxHandleAdornment")
         adorn.Name         = "__PeltESP"
         adorn.Adornee      = torso
         adorn.AlwaysOnTop  = true
         adorn.ZIndex       = 10
         adorn.Size         = torso.Size * 5
-        adorn.Color3       = Color3.fromRGB(57, 255, 20)  -- back to green
+        adorn.Color3       = Color3.fromRGB(57, 255, 20)  -- GREEN
         adorn.Transparency = 0.7
         adorn.Parent       = torso
         return adorn
     end
 
-    -- Create a green tracer line
+    -- Create a GREEN tracer line from center to torso (TreasureTracker style)
     local function createTracer(folder)
         local info = animalData[folder]
         if not (info and info.torso) then return nil end
         if type(Drawing) ~= "table" then return nil end
         local torso = info.torso
 
-        -- Remove any old tracer
+        -- Remove old tracer if present
         if tracerData[folder] and tracerData[folder].line then
             local oldLine = tracerData[folder].line
             if oldLine.__conn then oldLine.__conn:Disconnect() end
@@ -206,7 +204,7 @@ function PeltTracker.init()
         end
 
         local line = Drawing.new("Line")
-        line.Color        = Color3.fromRGB(57, 255, 20)  -- green
+        line.Color        = Color3.fromRGB(57, 255, 20)  -- GREEN
         line.Thickness    = 2
         line.Transparency = 1
         line.Visible      = true
@@ -233,7 +231,7 @@ function PeltTracker.init()
         return line
     end
 
-    -- Toggle ESP & tracer for a given folder
+    -- Toggle ESP & tracer for a given folder (unchanged logic, but uses new createESPAdornment/createTracer)
     local function toggleESP(folder)
         local info = animalData[folder]
         if not info then return false end
@@ -242,7 +240,7 @@ function PeltTracker.init()
         if existing then
             -- Destroy ESP adornment
             existing:Destroy()
-            -- Destroy tracer if present
+            -- Remove tracer if present
             if tracerData[folder] and tracerData[folder].line then
                 local oldLine = tracerData[folder].line
                 if oldLine.__conn then oldLine.__conn:Disconnect() end
@@ -252,7 +250,7 @@ function PeltTracker.init()
             tracerData[folder] = nil
             return false
         else
-            -- Create new ESP adornment and tracer in green
+            -- Create new ESP adornment and tracer
             local adorn = createESPAdornment(folder)
             local line  = createTracer(folder)
             tracerData[folder] = { adorn = adorn, line = line }
@@ -300,7 +298,6 @@ function PeltTracker.init()
                 btn.Font = Enum.Font.SourceSansSemibold; btn.TextSize = 16
                 btn.RichText = true
 
-                -- Colored dot prefix (remains based on torso color)
                 local r,g,b = toRGB(info.torso.Color)
                 local hex = string.format("%02X%02X%02X", r,g,b)
                 local prefix = string.format("<font color=\"#%s\">●</font> ", hex)
@@ -309,20 +306,19 @@ function PeltTracker.init()
                 btn:SetAttribute("WarningIcon", "")
                 btn.Text = baseText
 
-                -- Golden text for exotics, white otherwise
                 local defaultColor = info.isExotic and Color3.fromRGB(255,215,0) or Color3.new(1,1,1)
                 btn.TextColor3 = defaultColor
 
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
                 buttonMap[folder] = btn
 
-                -- Left‐click toggles ESP (now green)
+                -- ESP toggle (left‐click), text turns GREEN when enabled
                 btn.MouseButton1Click:Connect(function()
                     isConfirming[btn] = true
                     local added = toggleESP(folder)
                     if added then
                         btn.Text = baseText.."  ✅ ESP Enabled!"
-                        btn.TextColor3 = Color3.fromRGB(57, 255, 20)  -- green
+                        btn.TextColor3 = Color3.fromRGB(57, 255, 20)  -- GREEN
                     else
                         btn.Text = baseText.."  ❌ ESP Disabled!"
                         btn.TextColor3 = defaultColor
@@ -369,7 +365,7 @@ function PeltTracker.init()
         local main = Instance.new("Frame", trackerGui)
         main.Name = "MainFrame"
         main.Size = UDim2.new(0,360,0,500)
-        main.Position = UDim2.new(0.65,0,0,100)  -- unchanged from original
+        main.Position = UDim2.new(0.65,0,0,100)  -- exact original position
         main.BackgroundColor3 = Color3.fromRGB(25,25,25)
         main.BorderSizePixel = 0
         main.Active, main.Draggable = true, true
@@ -439,7 +435,7 @@ function PeltTracker.init()
         updateList()
     end
 
-    -- INITIAL SETUP + Notifications
+    -- INITIAL SETUP + Notifications (unchanged)
     local azure, crimson, white, polar = scanAll()
     if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
     if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
@@ -450,7 +446,7 @@ function PeltTracker.init()
     end
     createTrackerGui()
 
-    -- LIVE WATCH + WARNINGS + TRACERS + SOUND
+    -- LIVE WATCH + WARNINGS + TRACERS + SOUND (only tracer/adorn repair logic added)
     local lw, lt = 0,0
     RunService.Heartbeat:Connect(function(dt)
         lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
@@ -488,12 +484,12 @@ function PeltTracker.init()
         if lt>=TRACE_INTERVAL then
             lt=0
             for folder,data in pairs(tracerData) do
-                -- If tracer was removed or hidden, recreate it
+                -- If tracer was removed or broken, recreate
                 if data.line and (not data.line.Visible or not data.line.__conn) then
                     data.line:Remove()
                     data.line = createTracer(folder)
                 end
-                -- If adorn was destroyed, recreate it
+                -- If adorn was destroyed, recreate
                 if data.adorn then
                     local adornee = data.adorn.Adornee
                     if not (adornee and adornee.Parent) then
@@ -505,7 +501,7 @@ function PeltTracker.init()
         end
     end)
 
-    -- TOGGLE GUI with F7
+    -- TOGGLE GUI with F7 (unchanged)
     scanAll(); updateList()
     UserInputService.InputBegan:Connect(function(inp)
         if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 then
