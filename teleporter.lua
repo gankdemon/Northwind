@@ -75,6 +75,29 @@ local function createTeleportHub(games)
         btn.LayoutOrder = i
         btn.Parent = buttonContainer
 
+-- Minimize button
+    local minimized = false
+    local minBtn = Instance.new("TextButton", main)
+    minBtn.Name              = "Minimize"
+    minBtn.Size              = UDim2.new(0, 28, 0, 28)
+    minBtn.Position          = UDim2.new(1, -32, 0, 0)
+    minBtn.BackgroundTransparency = 1
+    minBtn.Font              = Enum.Font.GothamBold
+    minBtn.TextSize          = 18
+    minBtn.TextColor3        = Color3.new(1, 1, 1)
+    minBtn.Text              = "➖"
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        listFrame.Visible = not minimized
+        minBtn.Text = minimized and "➕" or "➖"
+        local currentHeight = main.Size.Y.Offset
+        local newSize = minimized
+            and UDim2.new(0, FRAME_WIDTH, 0, HEADER_HEIGHT + 4)
+            or UDim2.new(0, FRAME_WIDTH, 0, calculateFrameHeight(previousCount))
+        TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Size = newSize }):Play()
+        mainCorner.CornerRadius = UDim.new(0, minimized and 15 or 8)
+    end)
+
         -- Smooth corners for buttons
         local btnCorner = Instance.new("UICorner")
         btnCorner.CornerRadius = UDim.new(0, 6)
