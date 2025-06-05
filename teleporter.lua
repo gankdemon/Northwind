@@ -83,7 +83,10 @@ local function createTeleportHubUI()
     mainFrame = Instance.new("Frame")
     mainFrame.Name               = "MainFrame"
     mainFrame.Size               = UDim2.new(0, FRAME_WIDTH, 0, frameHeight)
-    mainFrame.Position           = UDim2.new(0.5, -FRAME_WIDTH/2, 0.5, -frameHeight/2)
+        -- Position the Teleport Hub at X = 35% of the screen, Y = 10% down from top
+    mainFrame.AnchorPoint = Vector2.new(0, 0)
+    mainFrame.Position    = UDim2.new(0.35, 0, 0.10, 0)
+
     mainFrame.BackgroundColor3   = Color3.fromRGB(25, 25, 25)
     mainFrame.BorderSizePixel    = 0
     mainFrame.Active             = true
