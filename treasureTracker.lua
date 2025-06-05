@@ -356,7 +356,10 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name              = "MainFrame"
     main.Size              = UDim2.new(0, FRAME_WIDTH, 0, FRAME_MIN_HEIGHT)
-    main.Position          = UDim2.new(0.65, 0, 0, 100)
+    -- ← EDITED: place TreasureTracker at X=35%, Y=70% (example)
+    main.AnchorPoint = Vector2.new(0, 0)
+    main.Position    = UDim2.new(0.35, 0, 0.70, 0)
+
     main.BackgroundColor3  = Color3.fromRGB(25, 25, 25)
     main.BorderSizePixel   = 0
     main.Active            = true
