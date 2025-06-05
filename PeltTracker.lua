@@ -317,7 +317,6 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name = "MainFrame"
     main.Size = UDim2.new(0,360,0,500)
-     -- ← EDITED: place PeltTracker at X=35%, Y=40% (example)
     main.AnchorPoint = Vector2.new(0, 0)
     main.Position    = UDim2.new(0.35, 0, 0.40, 0)
     main.Position    = UDim2.new(0.349999994, -354, 0.400000006, -52)
@@ -336,7 +335,7 @@ local function createTrackerGui()
     hdr.BackgroundTransparency = 1
     hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
     hdr.TextXAlignment = Enum.TextXAlignment.Left
-    hdr.Text = string.format("Tracker - %d found", count)
+    hdr.Text = string.format("Animal tracker - %d found", count)
 
     local minBtn = Instance.new("TextButton", main)
     minBtn.Size = UDim2.new(0,28,0,28)
