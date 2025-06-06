@@ -1,8 +1,7 @@
 -- PeltTracker with new exotic and common pelts v1.17
 local PeltTracker = {}
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--
-    print("[PeltTracker] Supercharged v1.17.0 starting...")
+    print("[PeltTracker] v1.17.0 starting...")
 
     -- CONFIG
     local whiteThreshold       = 240
@@ -335,7 +334,7 @@ local function createTrackerGui()
     hdr.BackgroundTransparency = 1
     hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
     hdr.TextXAlignment = Enum.TextXAlignment.Left
-    hdr.Text = string.format("Animal tracker - %d found", count)
+    hdr.Text = string.format("Pelt tracker - %d found", count)
 
     local minBtn = Instance.new("TextButton", main)
     minBtn.Size = UDim2.new(0,28,0,28)
