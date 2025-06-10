@@ -289,6 +289,8 @@ local function createTrackerGui()
 
     -- Header
     local hdr = Instance.new("TextLabel", main)
+    hdr.TextXAlignment = Enum.TextXAlignment.Left
+    hdr.TextYAlignment = Enum.TextYAlignment.Center
     hdr.Name     = "Header"
     hdr.Size     = UDim2.new(0.75, -10, 0, HEADER_HEIGHT)
     hdr.Position = UDim2.new(0,10,0,0)
