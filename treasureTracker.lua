@@ -231,7 +231,7 @@ local function onHeartbeat()
     -- Update header count
     local count  = #MARKERS_FOLDER:GetChildren()
     local header = trackerGui.MainFrame.Header
-    if header then header.Text = string.format("Treasure Tracker - %d found", count) end
+    if header then header.Text = string.format("Marker Tracker - %d found", count) end
 
     -- Refresh distances on existing buttons
     local markers = {}
