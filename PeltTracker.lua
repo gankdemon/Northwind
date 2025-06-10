@@ -185,7 +185,99 @@ function PeltTracker.init()
         if trackerGui then trackerGui:Destroy() end
         trackerGui = Instance.new("ScreenGui", PlayerGui)
         trackerGui.Name = "PeltTrackerGUI"
-            -- List frame
+-- CREATE / TOGGLE GUI
+local function createTrackerGui()
+    if trackerGui and trackerOpen then
+        trackerGui:Destroy()
+        trackerGui, trackerOpen = nil, false
+        return
+    end
+    trackerGui = Instance.new("ScreenGui", PlayerGui)
+    trackerOpen = true
+
+    -- Main frame
+    local main = Instance.new("Frame", trackerGui)
+    main.Name = "MainFrame"
+    main.Size = UDim2.new(0,360,0,500)
+    main.AnchorPoint = Vector2.new(0, 0)
+    main.Position    = UDim2.new(0.35, 0, 0.40, 0)
+    main.Position    = UDim2.new(0.349999994, -354, 0.400000006, -52)
+
+    main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    main.BorderSizePixel = 0
+    main.Active, main.Draggable = true, true
+    local mainCorner = Instance.new("UICorner", main)
+    mainCorner.CornerRadius = UDim.new(0,8)
+
+    -- Header & Minimize
+    local count = 0 for _ in pairs(animalData) do count += 1 end
+    local hdr = Instance.new("TextLabel", main)
+    hdr.Size = UDim2.new(0.75,-10,0,28)
+    hdr.Position = UDim2.new(0,10,0,0)
+    hdr.BackgroundTransparency = 1
+    hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+    hdr.TextXAlignment = Enum.TextXAlignment.Left
+    hdr.Text = string.format("Pelt tracker - %d found", count)
+
+    local minBtn = Instance.new("TextButton", main)
+    minBtn.Size = UDim2.new(0,28,0,28)
+    minBtn.Position = UDim2.new(1,-32,0,0)
+    minBtn.BackgroundTransparency = 1
+    minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+    minBtn.Text = "➖"
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        listFrame.Visible = not minimized
+        minBtn.Text = minimized and "➕" or "➖"
+        local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
+        TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), { Size=newSize }):Play()
+        mainCorner.CornerRadius = UDim.new(0, minimized and 15 or 8)
+    end)
+
+    -- Control buttons (same icons order as before)
+    local btnConfigs = {
+        {
+            icon="🔊",
+            onClick=function(b)
+                soundEnabled = not soundEnabled
+                b.TextColor3 = soundEnabled and Color3.fromRGB(0,255,0) or Color3.new(1,1,1)
+            end
+        },
+        {
+            icon="⚙️",
+            onClick=function()
+                createNotification("Settings","(coming soon)", Color3.fromRGB(70,70,70))
+            end
+        },
+        {
+            icon="⏬",
+            onClick=function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then hrp.CFrame = hrp.CFrame + Vector3.new(0, TELEPORT_DOWN_DIST, 0) end
+            end
+        },
+        {
+            icon="🔄",
+            onClick=function()
+                if not rebuildPending then
+                    rebuildPending = true
+                    scanAll(); updateList()
+                    delay(0.5, function() rebuildPending = false end)
+                end
+            end
+        },
+    }
+    for i,conf in ipairs(btnConfigs) do
+        local b = Instance.new("TextButton", main)
+        b.Size = UDim2.new(0,28,0,28)
+        b.Position = UDim2.new(1,-32*(i+1),0,0)
+        b.BackgroundTransparency = 1
+        b.Font, b.TextSize, b.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+        b.Text = conf.icon
+        b.MouseButton1Click:Connect(function() conf.onClick(b) end)
+    end
+
+    -- List frame
     listFrame = Instance.new("ScrollingFrame", main)
     listFrame.Name = "List"
     listFrame.Size = UDim2.new(1,-16,1,-40)
@@ -201,7 +293,8 @@ function PeltTracker.init()
     end)
 
     updateList()
-    end
+                
+end
 
     scanAll()
     createGui()
