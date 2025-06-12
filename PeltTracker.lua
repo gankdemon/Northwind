@@ -1,9 +1,8 @@
--- PeltTracker with new exotic and common pelts v1.17
-local PeltTracker = {}Add commentMore actions
+-- PeltTracker with new exotic and common pelts v1.17More actions
+local PeltTracker = {}
 function PeltTracker.init()
     --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--
     print("[PeltTracker] Supercharged v1.17.0 starting...")
-    print("[PeltTracker] v1.17.0 starting...")
 
     -- CONFIG
     local whiteThreshold       = 240
@@ -318,6 +317,7 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name = "MainFrame"
     main.Size = UDim2.new(0,360,0,500)
+     -- ← EDITED: place PeltTracker at X=35%, Y=40% (example)
     main.AnchorPoint = Vector2.new(0, 0)
     main.Position    = UDim2.new(0.35, 0, 0.40, 0)
     main.Position    = UDim2.new(0.349999994, -354, 0.400000006, -52)
@@ -336,8 +336,8 @@ local function createTrackerGui()
     hdr.BackgroundTransparency = 1
     hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
     hdr.TextXAlignment = Enum.TextXAlignment.Left
+    hdr.Text = string.format("Tracker - %d found", count)
     hdr.Text = string.format("Animal tracker - %d found", count)
-    hdr.Text = string.format("Pelt tracker - %d found", count)
 
     local minBtn = Instance.new("TextButton", main)
     minBtn.Size = UDim2.new(0,28,0,28)
@@ -362,3 +362,127 @@ local function createTrackerGui()
                 soundEnabled = not soundEnabled
                 b.TextColor3 = soundEnabled and Color3.fromRGB(0,255,0) or Color3.new(1,1,1)
             end
+        },
+        {
+            icon="⚙️",
+            onClick=function()
+                createNotification("Settings","(coming soon)", Color3.fromRGB(70,70,70))
+            end
+        },
+        {
+            icon="⏬",
+            onClick=function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then hrp.CFrame = hrp.CFrame + Vector3.new(0, TELEPORT_DOWN_DIST, 0) end
+            end
+        },
+        {
+            icon="🔄",
+            onClick=function()
+                if not rebuildPending then
+                    rebuildPending = true
+                    scanAll(); updateList()
+                    delay(0.5, function() rebuildPending = false end)
+                end
+            end
+        },
+    }
+    for i,conf in ipairs(btnConfigs) do
+        local b = Instance.new("TextButton", main)
+        b.Size = UDim2.new(0,28,0,28)
+        b.Position = UDim2.new(1,-32*(i+1),0,0)
+        b.BackgroundTransparency = 1
+        b.Font, b.TextSize, b.TextColor3 = Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+        b.Text = conf.icon
+        b.MouseButton1Click:Connect(function() conf.onClick(b) end)
+    end
+
+    -- List frame
+    listFrame = Instance.new("ScrollingFrame", main)
+    listFrame.Name = "List"
+    listFrame.Size = UDim2.new(1,-16,1,-40)
+    listFrame.Position = UDim2.new(0,8,0,32)
+    listFrame.BackgroundTransparency = 1
+    listFrame.ScrollBarThickness = 6
+    Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,6)
+    local layout=Instance.new("UIListLayout", listFrame)
+    layout.Padding = UDim.new(0,4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        listFrame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
+    end)
+
+    updateList()
+end
+
+ -- INITIAL SETUP + Notifications
+    local azure, crimson, white, polar = scanAll()
+    if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
+    if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
+    if #white   > 0 then createNotification("White Pelts Detected",   ("Found %d White: %s"):format(#white,   table.concat(white,",")),   Color3.fromRGB(200,200,200)) end
+    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")),   Color3.fromRGB(180,180,220)) end
+    if #azure==0 and #crimson==0 and #white==0 and #polar==0 then
+        createNotification("No Exotic Pelts", "No Azure, Crimson, White, or Polar detected.", Color3.fromRGB(80,80,80))
+    end
+    createTrackerGui()
+
+-- LIVE WATCH + WARNINGS + TRACERS + SOUND
+local lw, lt = 0,0
+RunService.Heartbeat:Connect(function(dt)
+    lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
+
+    if lw >= WARNING_INTERVAL then
+        lw = 0
+        local parts={}
+        for _,pl in ipairs(Players:GetPlayers()) do
+            if pl~=LocalPlayer and pl.Character then
+                local hrp=pl.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then table.insert(parts, hrp.Position) end
+            end
+        end
+        for folder,info in pairs(animalData) do
+            local btn=buttonMap[folder]
+            if not btn or isConfirming[btn] then continue end
+            local icon=""
+            for _,p in ipairs(parts) do
+                local d=(p - info.torso.Position).Magnitude
+                if d<=Settings.maxTrackDist then
+                    icon=" 🚨"
+                    if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
+                        alertSound:Play(); lastAlertSound=0
+                    end
+                    break
+                elseif d<=Settings.maxTrackDist*1.5 then
+                    icon=" ⚠️"
+                end
+            end
+            btn:SetAttribute("WarningIcon",icon)
+            btn.Text = btn:GetAttribute("BaseText")..icon
+        end
+    end
+
+    if lt>=TRACE_INTERVAL then
+        lt=0
+        local cam=Workspace.CurrentCamera
+        local center=Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+        for folder,data in pairs(tracerData) do
+            local box = Workspace:FindFirstChild("__PeltESP", true)
+            data.line.Visible = box and true or false
+            if data.line.Visible then
+                data.line.From = center
+                local torso = animalData[folder].torso
+                local pos, vis = cam:WorldToViewportPoint(torso.Position + Vector3.new(0,torso.Size.Y/2,0))
+                if vis then data.line.To = Vector2.new(pos.X, pos.Y) end
+            end
+        end
+    end
+end)
+
+-- TOGGLE GUI with F7
+UserInputService.InputBegan:Connect(function(inp)
+    if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 thenMore actions
+        createTrackerGui()
+    end
+end)
+end
+return PeltTracker
