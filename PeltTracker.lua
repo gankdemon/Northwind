@@ -1,4 +1,3 @@
-@@ -1,362 +1,361 @@
 -- PeltTracker with new exotic and common pelts v1.17
 local PeltTracker = {}
 function PeltTracker.init()
