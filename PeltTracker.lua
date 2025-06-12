@@ -1,5 +1,5 @@
 -- PeltTracker with new exotic and common pelts v1.17
-local PeltTracker = {}
+local PeltTracker = {}Add commentMore actions
 function PeltTracker.init()
     --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--
     print("[PeltTracker] Supercharged v1.17.0 starting...")
