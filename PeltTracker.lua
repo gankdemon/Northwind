@@ -258,7 +258,9 @@ function PeltTracker.init()
 
         local groups = {}
         for f, info in pairs(animalData) do
-            local sp = f.Name:match("([^_]+)_") or f.Name
+            -- split on underscores so species grouping works correctly
+            local parts = string.split(f.Name, "_")
+            local sp = parts[1] or f.Name
             groups[sp] = groups[sp] or {}
             table.insert(groups[sp], f)
         end
