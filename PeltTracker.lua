@@ -57,24 +57,14 @@ function PeltTracker.init()
         return math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255)
     end
 
-    -- classifyColor now includes Polar & White as exotic, plus common pelts
+    -- classifyColor
     local function classifyColor(c)
         local r,g,b = toRGB(c)
         local avg = (r+g+b)/3
-        -- Exotic pelts
-        if r>=whiteThreshold and g>=whiteThreshold and b>=whiteThreshold then
-            return "White", true
-        end
-        if math.abs(r-168)<=5 and math.abs(g-179)<=5 and math.abs(b-211)<=5 then
-            return "Polar", true
-        end
-        if r>=70 and g<=50 and b<=50 then
-            return "Crimson", true
-        end
-        if (b>=200 and r<=80 and g<=80) or (b>r and b>g and avg<100) then
-            return "Azure", true
-        end
-        -- New common pelts
+        if r>=whiteThreshold and g>=whiteThreshold and b>=whiteThreshold then return "White", true end
+        if math.abs(r-168)<=5 and math.abs(g-179)<=5 and math.abs(b-211)<=5 then return "Polar", true end
+        if r>=70 and g<=50 and b<=50 then return "Crimson", true end
+        if (b>=200 and r<=80 and g<=80) or (b>r and b>g and avg<100) then return "Azure", true end
         if math.abs(r-63)<=5  and math.abs(g-62)<=5  and math.abs(b-51)<=5  then return "Glade",    false end
         if math.abs(r-71)<=5  and math.abs(g-51)<=5  and math.abs(b-51)<=5  then return "Hazel",    false end
         if math.abs(r-99)<=5  and math.abs(g-89)<=5  and math.abs(b-70)<=5  then return "Kermode",  false end
@@ -82,14 +72,13 @@ function PeltTracker.init()
         if math.abs(r-138)<=5 and math.abs(g-83)<=5  and math.abs(b-60)<=5  then return "Cinnamon", false end
         if math.abs(r-168)<=5 and math.abs(g-130)<=5 and math.abs(b-103)<=5 then return "Blonde",   false end
         if math.abs(r-124)<=5 and math.abs(g-80)<=5  and math.abs(b-48)<=5  then return "Beige",    false end
-        -- Other common/non-exotic
         if r>=150 and g>=80 and g<=110 and b<=80 then return "Orange", false end
         if r<=50 and g<=50 and b<=50 then return "Black", false end
         if math.abs(r-g)<=20 and math.abs(r-b)<=20 and math.abs(g-b)<=20 then
-            if avg>=140 then return "Grey", false else return "Dark Grey", false end
+            return avg>=140 and "Grey" or "Dark Grey", false
         end
         if r>=60 and g>=40 and b>=30 then
-            if avg>=80 then return "Brown", false else return "Dark Brown", false end
+            return avg>=80 and "Brown" or "Dark Brown", false
         end
         return "Unknown", false
     end
@@ -100,43 +89,28 @@ function PeltTracker.init()
         gui.ResetOnSpawn = false
         local f = Instance.new("Frame", gui)
         f.Size = UDim2.new(0,400,0,100)
-        f.Position = UDim2.new(1.05,0,0.75,0)
-        f.AnchorPoint = Vector2.new(1,0)
-        f.BackgroundColor3 = bg
-        f.BorderSizePixel = 0
+        f.Position = UDim2.new(1.05,0,0.75,0); f.AnchorPoint = Vector2.new(1,0)
+        f.BackgroundColor3 = bg; f.BorderSizePixel = 0
         Instance.new("UICorner", f).CornerRadius = UDim.new(0,8)
         local t = Instance.new("TextLabel", f)
-        t.Size = UDim2.new(1,-20,0,28)
-        t.Position = UDim2.new(0,10,0,8)
-        t.BackgroundTransparency = 1
-        t.Font = Enum.Font.GothamBold
-        t.TextSize = 20
-        t.TextColor3 = Color3.new(1,1,1)
-        t.TextXAlignment = Enum.TextXAlignment.Left
+        t.Size = UDim2.new(1,-20,0,28); t.Position = UDim2.new(0,10,0,8)
+        t.BackgroundTransparency = 1; t.Font = Enum.Font.GothamBold; t.TextSize = 20
+        t.TextColor3 = Color3.new(1,1,1); t.TextXAlignment = Enum.TextXAlignment.Left
         t.Text = title
         local b = Instance.new("TextLabel", f)
-        b.Size = UDim2.new(1,-20,0,40)
-        b.Position = UDim2.new(0,10,0,36)
-        b.BackgroundTransparency = 1
-        b.Font = Enum.Font.Gotham
-        b.TextSize = 16
-        b.TextColor3 = Color3.new(1,1,1)
-        b.TextWrapped = true
-        b.TextXAlignment = Enum.TextXAlignment.Left
-        b.TextYAlignment = Enum.TextYAlignment.Top
+        b.Size = UDim2.new(1,-20,0,40); b.Position = UDim2.new(0,10,0,36)
+        b.BackgroundTransparency = 1; b.Font = Enum.Font.Gotham; b.TextSize = 16
+        b.TextColor3 = Color3.new(1,1,1); b.TextWrapped = true
+        b.TextXAlignment = Enum.TextXAlignment.Left; b.TextYAlignment = Enum.TextYAlignment.Top
         b.Text = message
         local ok = Instance.new("TextButton", f)
-        ok.Size = UDim2.new(0,70,0,28)
-        ok.Position = UDim2.new(1,-80,1,-40)
-        ok.Font = Enum.Font.GothamBold
-        ok.TextSize = 18
-        ok.Text = "OK"
-        ok.BackgroundColor3 = Color3.fromRGB(70,70,70)
-        ok.TextColor3 = Color3.new(1,1,1)
+        ok.Size = UDim2.new(0,70,0,28); ok.Position = UDim2.new(1,-80,1,-40)
+        ok.Font = Enum.Font.GothamBold; ok.TextSize = 18; ok.Text = "OK"
+        ok.BackgroundColor3 = Color3.fromRGB(70,70,70); ok.TextColor3 = Color3.new(1,1,1)
         Instance.new("UICorner", ok).CornerRadius = UDim.new(0,6)
-        TweenService:Create(f, TweenInfo.new(0.6), {Position=UDim2.new(0.95,0,0.75,0)}):Play()
+        TweenService:Create(f, TweenInfo.new(0.6), {Position = UDim2.new(0.95,0,0.75,0)}):Play()
         ok.MouseButton1Click:Connect(function()
-            TweenService:Create(f, TweenInfo.new(0.6), {Position=UDim2.new(1.05,0,0.75,0)}):Play()
+            TweenService:Create(f, TweenInfo.new(0.6), {Position = UDim2.new(1.05,0,0.75,0)}):Play()
             delay(0.6, function() gui:Destroy() end)
         end)
     end
@@ -158,11 +132,10 @@ function PeltTracker.init()
                     local name, ex = classifyColor(torso.Color)
                     animalData[f] = { torso = torso, color = name, isExotic = ex, markers = nil }
                     if ex then
-                        if name == "Azure"   then table.insert(azureList,   f.Name)
-                        elseif name == "Crimson" then table.insert(crimsonList, f.Name)
-                        elseif name == "White"   then table.insert(whiteList,   f.Name)
-                        elseif name == "Polar"   then table.insert(polarList,   f.Name)
-                        end
+                        if name=="Azure"   then table.insert(azureList, f.Name)
+                        elseif name=="Crimson" then table.insert(crimsonList, f.Name)
+                        elseif name=="White"   then table.insert(whiteList, f.Name)
+                        elseif name=="Polar"   then table.insert(polarList, f.Name) end
                     end
                 end
             end
@@ -186,7 +159,7 @@ function PeltTracker.init()
             return false
         end
         local box = Instance.new("BoxHandleAdornment", part)
-        box.Name = "__PeltESP"; box.Ador nee = part; box.AlwaysOnTop = true; box.ZIndex = 10
+        box.Name = "__PeltESP"; box.Adornee = part; box.AlwaysOnTop = true; box.ZIndex = 10
         box.Size = part.Size * 5; box.Color3 = Color3.fromRGB(57,255,20); box.Transparency = 0.7
         local cam = Workspace.CurrentCamera
         local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
@@ -201,9 +174,7 @@ function PeltTracker.init()
     local function updateAnimalList()
         if not animalListFrame then return end
         for _, c in ipairs(animalListFrame:GetChildren()) do
-            if c:IsA("TextLabel") or c:IsA("TextButton") then
-                c:Destroy()
-            end
+            if c:IsA("TextLabel") or c:IsA("TextButton") then c:Destroy() end
         end
         table.clear(buttonMap)
         local groups = {}
@@ -223,7 +194,7 @@ function PeltTracker.init()
             hdr.BackgroundTransparency = 1
             hdr.Font = Enum.Font.GothamBold; hdr.TextSize = 16; hdr.TextColor3 = Color3.new(1,1,1)
             hdr.TextXAlignment = Enum.TextXAlignment.Center
-            hdr.Text = "─── " .. sp .. " ───"
+            hdr.Text = "─── "..sp.." ───"
             for _, folder in ipairs(groups[sp]) do
                 local info = animalData[folder]
                 local btn = Instance.new("TextButton", animalListFrame)
@@ -241,11 +212,11 @@ function PeltTracker.init()
                 buttonMap[folder] = btn
                 btn.MouseButton1Click:Connect(function()
                     local ok = toggleESP(folder)
-                    btn.Text = baseText .. (ok and "  ✅ ESP" or "  ❌ ESP")
+                    btn.Text = baseText..(ok and "  ✅ ESP" or "  ❌ ESP")
                 end)
                 btn.InputBegan:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
-                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if inp.UserInputType==Enum.UserInputType.MouseButton2 then
+                        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         if hrp then hrp.CFrame = info.torso.CFrame + Vector3.new(0,3,0) end
                     end
                 end)
@@ -330,10 +301,10 @@ function PeltTracker.init()
                     delay(1.5, function() btn.Text = m.Name end)
                 end)
                 btn.InputBegan:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
-                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if inp.UserInputType==Enum.UserInputType.MouseButton2 then
+                        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                            local part = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+                            local part=m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
                             if part then
                                 hrp.CFrame = part.CFrame * CFrame.new(TREE_TELEPORT_OFFSET)
                             end
@@ -425,52 +396,45 @@ function PeltTracker.init()
 
         local minimized = false
         local listRef = nil
+        local tabButtons = {}
         local minBtn = Instance.new("TextButton", main)
         minBtn.Size = UDim2.new(0,28,0,28)
         minBtn.Position = UDim2.new(1,-32,0,0)
         minBtn.BackgroundTransparency = 1
         minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
         minBtn.Text = "➖"
-
-        -- we'll fill tabButtons below
-        local tabButtons = {}
-
         minBtn.MouseButton1Click:Connect(function()
             minimized = not minimized
             if listRef then listRef.Visible = not minimized end
-            -- hide/show tabs too
-            for _, btn in pairs(tabButtons) do
-                btn.Visible = not minimized
-            end
+            for _, btn in pairs(tabButtons) do btn.Visible = not minimized end
             minBtn.Text = minimized and "➕" or "➖"
             local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
             TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), {Size=newSize}):Play()
         end)
 
         -- Control buttons 🔊 ⚙️ ⏬ 🔄
-        local ctrlIcons = {"🔊","⚙️","⏬","🔄"}
-        local ctrlFuncs = {
+        local icons = {"🔊","⚙️","⏬","🔄"}
+        local funcs = {
             function(b) soundEnabled = not soundEnabled; b.TextColor3 = soundEnabled and Color3.fromRGB(0,255,0) or Color3.new(1,1,1) end,
             function() createNotification("Settings","Coming soon",Color3.fromRGB(70,70,70)) end,
             function() local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"); if hrp then hrp.CFrame=hrp.CFrame*CFrame.new(0,TELEPORT_DOWN_DIST,0) end end,
             function() scanAll(); updateAnimalList() end,
         }
-        for i, icon in ipairs(ctrlIcons) do
+        for i, icon in ipairs(icons) do
             local b = Instance.new("TextButton", main)
-            b.Size = UDim2.new(0,28,0,28)
-            b.Position = UDim2.new(1,-32*(i+1),0,0)
-            b.BackgroundTransparency, b.Font, b.TextSize, b.TextColor3 = 1, Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+            b.Size, b.Position = UDim2.new(0,28,0,28), UDim2.new(1,-32*(i+1),0,0)
+            b.BackgroundTransparency, b.Font, b.TextSize, b.TextColor3 = 1, Enum.Font.GothamBold,18,Color3.new(1,1,1)
             b.Text = icon
-            b.MouseButton1Click:Connect(ctrlFuncs[i])
+            b.MouseButton1Click:Connect(funcs[i])
         end
 
-        -- Tabs (rounded, no border)
+        -- Tabs
         local tabs = {"Animals","Trees","Gems"}
         for i,name in ipairs(tabs) do
             local tbtn = Instance.new("TextButton", main)
             tbtn.Size = UDim2.new(0,100,0,24)
             tbtn.Position = UDim2.new(0,10+(i-1)*105,0,30)
-            tbtn.BackgroundColor3, tbtn.BorderSizePixel, tbtn.AutoButtonColor = Color3.fromRGB(45,45,45), 0, false
+            tbtn.BackgroundColor3, tbtn.BorderSizePixel, tbtn.AutoButtonColor = Color3.fromRGB(45,45,45),0,false
             tbtn.Font, tbtn.TextSize, tbtn.TextColor3 = Enum.Font.GothamBold,14,Color3.new(1,1,1)
             tbtn.Text = name
             Instance.new("UICorner", tbtn).CornerRadius = UDim.new(0,6)
@@ -487,17 +451,14 @@ function PeltTracker.init()
             end)
         end
 
-        -- List frames factory
+        -- List factory
         local function makeList()
             local f = Instance.new("ScrollingFrame", main)
-            f.Size = UDim2.new(1,-16,1,-60)
-            f.Position = UDim2.new(0,8,0,60)
-            f.BackgroundTransparency = 1
-            f.ScrollBarThickness = 6
+            f.Size, f.Position = UDim2.new(1,-16,1,-60), UDim2.new(0,8,0,60)
+            f.BackgroundTransparency, f.ScrollBarThickness = 1,6
             Instance.new("UICorner", f).CornerRadius = UDim.new(0,6)
             local layout = Instance.new("UIListLayout", f)
-            layout.Padding = UDim.new(0,4)
-            layout.SortOrder = Enum.SortOrder.LayoutOrder
+            layout.Padding = UDim.new(0,4); layout.SortOrder = Enum.SortOrder.LayoutOrder
             layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                 f.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
             end)
@@ -511,7 +472,7 @@ function PeltTracker.init()
         gemListFrame.Visible  = false
         listRef = animalListFrame
 
-        -- Initial population
+        -- populate
         scanAll()
         updateAnimalList()
         updateTreeList()
@@ -519,79 +480,58 @@ function PeltTracker.init()
     end
 
     -- INITIAL SETUP + NOTIFICATIONS
-    local azure, crimson, white, polar = scanAll()
-    if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
-    if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
-    if #white   > 0 then createNotification("White Pelts Detected",   ("Found %d White: %s"):format(#white,   table.concat(white,",")),   Color3.fromRGB(200,200,200)) end
-    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")), Color3.fromRGB(180,180,220)) end
-    if #azure==0 and #crimson==0 and #white==0 and #polar==0 then
-        createNotification("No Exotic Pelts","No Azure, Crimson, White, or Polar detected.",Color3.fromRGB(80,80,80))
-    end
+    local a,c,w,p = scanAll()
+    if #a>0 then createNotification("Azure Pelts Detected",("Found %d Azure: %s"):format(#a,table.concat(a,",")),Color3.fromRGB(0,0,128)) end
+    if #c>0 then createNotification("Crimson Pelts Detected",("Found %d Crimson: %s"):format(#c,table.concat(c,",")),Color3.fromRGB(220,20,60)) end
+    if #w>0 then createNotification("White Pelts Detected",("Found %d White: %s"):format(#w,table.concat(w,",")),Color3.fromRGB(200,200,200)) end
+    if #p>0 then createNotification("Polar Pelts Detected",("Found %d Polar: %s"):format(#p,table.concat(p,",")),Color3.fromRGB(180,180,220)) end
+    if #a==0 and #c==0 and #w==0 and #p==0 then createNotification("No Exotic Pelts","No Azure, Crimson, White, or Polar detected.",Color3.fromRGB(80,80,80)) end
     createTrackerGui()
 
     -- LIVE WATCH + WARNINGS + TRACERS + SOUND
     local lw, lt = 0,0
     RunService.Heartbeat:Connect(function(dt)
         lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
-
-        if lw >= WARNING_INTERVAL then
-            lw = 0
-            local parts = {}
-            for _, pl in ipairs(Players:GetPlayers()) do
+        if lw>=WARNING_INTERVAL then
+            lw=0
+            local parts={}
+            for _,pl in ipairs(Players:GetPlayers()) do
                 if pl~=LocalPlayer and pl.Character then
-                    local hrp = pl.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then table.insert(parts, hrp.Position) end
+                    local hrp=pl.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then table.insert(parts,hrp.Position) end
                 end
             end
-            for folder, info in pairs(animalData) do
-                local btn = buttonMap[folder]
+            for folder,info in pairs(animalData) do
+                local btn=buttonMap[folder]
                 if not btn then continue end
-                local icon = ""
-                for _, pos in ipairs(parts) do
-                    local d = (pos - info.torso.Position).Magnitude
+                local icon=""
+                for _,pos in ipairs(parts) do
+                    local d=(pos-info.torso.Position).Magnitude
                     if d<=Settings.maxTrackDist then
                         icon=" 🚨"
-                        if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
-                            alertSound:Play()
-                            lastAlertSound = 0
-                        end
+                        if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then alertSound:Play(); lastAlertSound=0 end
                         break
-                    elseif d<=Settings.maxTrackDist*1.5 then
-                        icon=" ⚠️"
-                    end
+                    elseif d<=Settings.maxTrackDist*1.5 then icon=" ⚠️" end
                 end
-                btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","") .. icon
+                btn.Text=btn.Text:gsub(" 🚨",""):gsub(" ⚠️","")..icon
             end
         end
-
-        if lt >= TRACE_INTERVAL then
-            lt = 0
-            local cam = Workspace.CurrentCamera
-            local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
-
-            for _, data in pairs(tracerData) do
-                data.line.Visible = true
-                local part = data.box.Adornee
-                local pos, vis = cam:WorldToViewportPoint(part.Position + Vector3.new(0, part.Size.Y/2, 0))
-                if vis then
-                    data.line.From = center
-                    data.line.To = Vector2.new(pos.X, pos.Y)
-                else
-                    data.line.Visible = false
-                end
+        if lt>=TRACE_INTERVAL then
+            lt=0
+            local cam=Workspace.CurrentCamera
+            local center=Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y/2)
+            for _,data in pairs(tracerData) do
+                data.line.Visible=true
+                local part=data.box.Adornee
+                local pos,vis=cam:WorldToViewportPoint(part.Position+Vector3.new(0,part.Size.Y/2,0))
+                if vis then data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y) else data.line.Visible=false end
             end
-
-            for model, data in pairs(treeTracerData) do
-                data.line.Visible = true
-                local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+            for model,data in pairs(treeTracerData) do
+                data.line.Visible=true
+                local part=model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
                 if part then
-                    local pos, vis = cam:WorldToViewportPoint(part.Position)
-                    if vis then
-                        data.line.From = center
-                        data.line.To = Vector2.new(pos.X, pos.Y)
-                    else
-                        data.line.Visible = false
-                    end
+                    local pos,vis=cam:WorldToViewportPoint(part.Position)
+                    if vis then data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y) else data.line.Visible=false end
                 end
             end
         end
