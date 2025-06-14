@@ -342,30 +342,40 @@ function PeltTracker.init()
         end
     end
 
-    -- SCAN GEMS (match any “uncut”, case-insensitive)
-    local function scanGems()
-        gemData = {}
-        for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
-            local root = Workspace:FindFirstChild(rootName)
-            local folder = root and root:FindFirstChild("Resources")
-            if folder and folder:IsA("Folder") then
-                for _, m in ipairs(folder:GetChildren()) do
-                    if m:IsA("Model") and m.Name:lower():match("deposit") then
-                        local ores = m:FindFirstChild("Ores")
-                        if ores and ores:IsA("Folder") then
-                            for _, ore in ipairs(ores:GetChildren()) do
-                                if ore.Name:lower():match("uncut") then
-                                    table.insert(gemData, ore)
-                                end
-                            end
+    -- Robust gem scanner: finds every descendant named *Uncut* under any *deposit* model
+local function scanGems()
+    gemData = {}
+
+    -- find the Resources containers under both StaticProps and TargetFilter
+    for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
+        local root = Workspace:FindFirstChild(rootName)
+        local resources = root and root:FindFirstChild("Resources")
+        if not resources then
+            warn(("[PeltTracker] No Resources folder under %s"):format(rootName))
+        else
+            -- for each direct child (hopefully your “Illegal gold deposit”, etc.)
+            for _, deposit in ipairs(resources:GetChildren()) do
+                if deposit:IsA("Model") and deposit.Name:lower():match("deposit") then
+                    -- now scan every descendant in that model
+                    for _, node in ipairs(deposit:GetDescendants()) do
+                        -- match “uncut” anywhere in the name
+                        if node:IsA("BasePart") 
+                           and node.Name:lower():match("uncut") then
+                            
+                            table.insert(gemData, node)
+                            -- debug
+                            print(("[PeltTracker] ➤ Found gem node '%s' in deposit '%s'")
+                                  :format(node:GetFullName(), deposit.Name))
                         end
                     end
                 end
             end
         end
-        print("[PeltTracker] scanGems found", #gemData, "gems")
-        return gemData
     end
+
+    print(("[PeltTracker] scanGems total found: %d"):format(#gemData))
+    return gemData
+end
 
     -- UPDATE GEM LIST (with ESP + teleport)
     local function updateGemList()
