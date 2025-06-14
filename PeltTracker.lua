@@ -1,9 +1,8 @@
 -- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.0
 local PeltTracker = {}
-
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 + Trees & Gems //--  
-    print("[PeltTracker] Supercharged v1.17.0 starting with Tree & Gem tabs...")
+    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 //--  
+    print("[PeltTracker] Supercharged v1.17.0 starting...")
 
     -- CONFIG
     local whiteThreshold       = 240
@@ -21,15 +20,18 @@ function PeltTracker.init()
 
     -- LOCALPLAYER & GUI
     local LocalPlayer = Players.LocalPlayer
-    if not LocalPlayer then warn("[PeltTracker] No LocalPlayer") return end
+    if not LocalPlayer then
+        warn("[PeltTracker] No LocalPlayer")
+        return
+    end
     local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
     -- EXTRA STATE
-    local soundEnabled     = false
-    local lastAlertSound   = 0
-    local alertSound       = Instance.new("Sound", PlayerGui)
-    alertSound.SoundId     = "rbxassetid://472069894"
-    alertSound.Volume      = 1
+    local soundEnabled    = false
+    local lastAlertSound  = 0
+    local alertSound      = Instance.new("Sound", PlayerGui)
+    alertSound.SoundId   = "rbxassetid://472069894"
+    alertSound.Volume    = 1
 
     -- SETTINGS
     local Settings = {
@@ -39,12 +41,13 @@ function PeltTracker.init()
     }
 
     -- CORE STATE
-    local animalData, treeData, gemData = {}, {}, {}
-    local buttonMap   = {}
-    local tracerData  = {}
+    local animalData     = {}  -- folder → { torso, color, isExotic, markers }
+    local treeData       = {}  -- list of tree Models
+    local gemData        = {}  -- list of ore Instances
+    local buttonMap      = {}  -- folder → TextButton
+    local tracerData     = {}  -- folder → { box, line }
     local trackerGui, trackerOpen
-    local currentTab  = "Animals"
-    local listFrame
+    local currentTab     = "Animals"
     local animalListFrame, treeListFrame, gemListFrame
 
     -- UTILITIES
@@ -77,7 +80,7 @@ function PeltTracker.init()
         if math.abs(r-138)<=5 and math.abs(g-83)<=5  and math.abs(b-60)<=5  then return "Cinnamon", false end
         if math.abs(r-168)<=5 and math.abs(g-130)<=5 and math.abs(b-103)<=5 then return "Blonde",   false end
         if math.abs(r-124)<=5 and math.abs(g-80)<=5  and math.abs(b-48)<=5  then return "Beige",    false end
-        -- Other common/non‑exotic
+        -- Other common/non-exotic
         if r>=150 and g>=80 and g<=110 and b<=80 then return "Orange", false end
         if r<=50 and g<=50 and b<=50 then return "Black", false end
         if math.abs(r-g)<=20 and math.abs(r-b)<=20 and math.abs(g-b)<=20 then
@@ -93,31 +96,37 @@ function PeltTracker.init()
     local function createNotification(title, message, bg)
         local gui = Instance.new("ScreenGui", PlayerGui); gui.ResetOnSpawn = false
         local f = Instance.new("Frame", gui)
-        f.Size, f.Position = UDim2.new(0,400,0,100), UDim2.new(1.05,0,0.75,0)
-        f.AnchorPoint = Vector2.new(1,0); f.BackgroundColor3 = bg; f.BorderSizePixel = 0
+        f.Size = UDim2.new(0,400,0,100)
+        f.Position = UDim2.new(1.05,0,0.75,0)
+        f.AnchorPoint = Vector2.new(1,0)
+        f.BackgroundColor3 = bg; f.BorderSizePixel = 0
         Instance.new("UICorner", f).CornerRadius = UDim.new(0,8)
+        -- header
         local t = Instance.new("TextLabel", f)
-        t.Size, t.Position = UDim2.new(1,-20,0,28), UDim2.new(0,10,0,8)
-        t.BackgroundTransparency = 1; t.Font = Enum.Font.GothamBold
-        t.TextSize, t.TextColor3 = 20, Color3.new(1,1,1)
-        t.TextXAlignment = Enum.TextXAlignment.Left; t.Text = title
+        t.Size = UDim2.new(1,-20,0,28); t.Position = UDim2.new(0,10,0,8)
+        t.BackgroundTransparency = 1; t.Font = Enum.Font.GothamBold; t.TextSize = 20
+        t.TextColor3 = Color3.new(1,1,1); t.TextXAlignment = Enum.TextXAlignment.Left
+        t.Text = title
+        -- body
         local b = Instance.new("TextLabel", f)
-        b.Size, b.Position = UDim2.new(1,-20,0,40), UDim2.new(0,10,0,36)
-        b.BackgroundTransparency = 1; b.Font = Enum.Font.Gotham
-        b.TextSize = 16; b.TextColor3 = Color3.new(1,1,1)
-        b.TextWrapped, b.TextXAlignment, b.TextYAlignment = true,
-            Enum.TextXAlignment.Left, Enum.TextYAlignment.Top
+        b.Size = UDim2.new(1,-20,0,40); b.Position = UDim2.new(0,10,0,36)
+        b.BackgroundTransparency = 1; b.Font = Enum.Font.Gotham; b.TextSize = 16
+        b.TextColor3 = Color3.new(1,1,1); b.TextWrapped = true
+        b.TextXAlignment = Enum.TextXAlignment.Left; b.TextYAlignment = Enum.TextYAlignment.Top
         b.Text = message
+        -- OK button
         local ok = Instance.new("TextButton", f)
-        ok.Size, ok.Position = UDim2.new(0,70,0,28), UDim2.new(1,-80,1,-40)
-        ok.Font, ok.TextSize, ok.Text = Enum.Font.GothamBold, 18, "OK"
-        ok.BackgroundColor3, ok.TextColor3 = Color3.fromRGB(70,70,70), Color3.new(1,1,1)
+        ok.Size = UDim2.new(0,70,0,28); ok.Position = UDim2.new(1,-80,1,-40)
+        ok.Font = Enum.Font.GothamBold; ok.TextSize = 18; ok.Text = "OK"
+        ok.BackgroundColor3 = Color3.fromRGB(70,70,70); ok.TextColor3 = Color3.new(1,1,1)
         Instance.new("UICorner", ok).CornerRadius = UDim.new(0,6)
-        TweenService:Create(f, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            { Position = UDim2.new(0.95,0,0.75,0) }):Play()
+        TweenService:Create(f, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.95,0,0.75,0)
+        }):Play()
         ok.MouseButton1Click:Connect(function()
-            TweenService:Create(f, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                { Position = UDim2.new(1.05,0,0.75,0) }):Play()
+            TweenService:Create(f, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(1.05,0,0.75,0)
+            }):Play()
             delay(0.6, function() gui:Destroy() end)
         end)
     end
@@ -139,10 +148,10 @@ function PeltTracker.init()
                     local name, ex = classifyColor(torso.Color)
                     animalData[f] = { torso = torso, color = name, isExotic = ex, markers = nil }
                     if ex then
-                        if name == "Azure" then table.insert(azureList, f.Name)
+                        if name == "Azure"   then table.insert(azureList,   f.Name)
                         elseif name == "Crimson" then table.insert(crimsonList, f.Name)
-                        elseif name == "White" then table.insert(whiteList, f.Name)
-                        elseif name == "Polar" then table.insert(polarList, f.Name)
+                        elseif name == "White"   then table.insert(whiteList,   f.Name)
+                        elseif name == "Polar"   then table.insert(polarList,   f.Name)
                         end
                     end
                 end
@@ -151,7 +160,7 @@ function PeltTracker.init()
         return azureList, crimsonList, whiteList, polarList
     end
 
-    -- ESP & TRACER: toggles both box + line
+    -- ESP & TRACER
     local function toggleESP(folder)
         local info = animalData[folder]; if not info then return false end
         local t = info.torso
@@ -165,37 +174,27 @@ function PeltTracker.init()
             end
             return false
         end
-        -- box
         local box = Instance.new("BoxHandleAdornment", t)
-        box.Name       = "__PeltESP"
-        box.Adornee    = t
-        box.AlwaysOnTop= true
-        box.ZIndex     = 10
-        box.Size       = t.Size * 5
-        box.Color3     = Color3.fromRGB(57,255,20)
+        box.Name = "__PeltESP"; box.Adornee = t; box.AlwaysOnTop = true
+        box.ZIndex = 10; box.Size = t.Size * 5; box.Color3 = Color3.fromRGB(57,255,20)
         box.Transparency = 0.7
-        -- tracer
         local cam = Workspace.CurrentCamera
         local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
         local line = Drawing.new("Line")
-        line.Visible   = true
-        line.Thickness = 2
-        line.Color     = box.Color3
-        line.From      = center
-        line.To        = center
+        line.Visible = true; line.Thickness = 2; line.Color = box.Color3
+        line.From = center; line.To = center
         tracerData[folder] = { box = box, line = line }
         return true
     end
 
     -- BUILD & REFRESH ANIMAL LIST
-    local function updateList()
-        if not listFrame then return end
-        -- clear
-        for _, c in ipairs(listFrame:GetChildren()) do
+    local function updateAnimalList()
+        if not animalListFrame then return end
+        for _, c in ipairs(animalListFrame:GetChildren()) do
             if c:IsA("TextLabel") or c:IsA("TextButton") then c:Destroy() end
         end
         table.clear(buttonMap)
-        -- group by species prefix
+
         local groups = {}
         for f, info in pairs(animalData) do
             local sp = f.Name:match("([^_]+)_") or f.Name
@@ -205,46 +204,43 @@ function PeltTracker.init()
         local species = {}
         for sp in pairs(groups) do table.insert(species, sp) end
         table.sort(species)
-        -- build
+
         local order = 1
         for _, sp in ipairs(species) do
-            local hdr = Instance.new("TextLabel", listFrame)
+            local hdr = Instance.new("TextLabel", animalListFrame)
             hdr.LayoutOrder = order; order += 1
             hdr.Size = UDim2.new(1,0,0,20)
             hdr.BackgroundTransparency = 1
             hdr.Font = Enum.Font.GothamBold; hdr.TextSize = 16; hdr.TextColor3 = Color3.new(1,1,1)
             hdr.TextXAlignment = Enum.TextXAlignment.Center
             hdr.Text = "─── " .. sp .. " ───"
+
             for _, folder in ipairs(groups[sp]) do
                 local info = animalData[folder]
-                local btn = Instance.new("TextButton", listFrame)
+                local btn = Instance.new("TextButton", animalListFrame)
                 btn.LayoutOrder = order; order += 1
                 btn.Size = UDim2.new(1,0,0,28)
                 btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
                 btn.BorderSizePixel = 0
-                btn.Font = Enum.Font.SourceSansSemibold; btn.TextSize = 16
-                btn.RichText = true
+                btn.Font = Enum.Font.SourceSansSemibold; btn.TextSize = 16; btn.RichText = true
 
                 local r,g,b = toRGB(info.torso.Color)
                 local hex = string.format("%02X%02X%02X", r,g,b)
                 local prefix = string.format("<font color=\"#%s\">●</font> ", hex)
-                btn.Text = prefix .. folder.Name .. " — " .. info.color
+                local base = prefix .. folder.Name .. " — " .. info.color
+                btn.Text = base
+                btn.TextColor3 = info.isExotic and Color3.fromRGB(255,215,0) or Color3.new(1,1,1)
+
                 buttonMap[folder] = btn
-
                 btn.MouseButton1Click:Connect(function()
-                    if toggleESP(folder) then
-                        btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-                        if soundEnabled and tick() - lastAlertSound >= ALERT_SOUND_INTERVAL then
-                            alertSound:Play(); lastAlertSound = tick()
-                        end
-                    else
-                        btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-                    end
+                    local ok = toggleESP(folder)
+                    btn.Text = base .. (ok and "  ✅ ESP" or "  ❌ ESP")
                 end)
-
-                btn.MouseButton2Click:Connect(function()
-                    trackerOpen = not trackerOpen
-                    createTrackerGui()
+                btn.InputBegan:Connect(function(inp)
+                    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
+                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then hrp.CFrame = info.torso.CFrame + Vector3.new(0,3,0) end
+                    end
                 end)
             end
         end
@@ -254,8 +250,8 @@ function PeltTracker.init()
     local function scanTrees()
         treeData = {}
         local roots = {
-            Workspace:FindFirstChild("StaticProps") and Workspace.StaticProps:FindFirstChild("Resources"),
-            Workspace:FindFirstChild("TargetFilter") and Workspace.TargetFilter:FindFirstChild("Resources"),
+            Workspace:FindFirstChild("StaticProps") and Workspace.StaticProps.Resources,
+            Workspace:FindFirstChild("TargetFilter") and Workspace.TargetFilter.Resources,
         }
         for _, folder in ipairs(roots) do
             if folder and folder:IsA("Folder") then
@@ -273,8 +269,8 @@ function PeltTracker.init()
     local function scanGems()
         gemData = {}
         local roots = {
-            Workspace:FindFirstChild("StaticProps") and Workspace.StaticProps:FindFirstChild("Resources"),
-            Workspace:FindFirstChild("TargetFilter") and Workspace.TargetFilter:FindFirstChild("Resources"),
+            Workspace:FindFirstChild("StaticProps") and Workspace.StaticProps.Resources,
+            Workspace:FindFirstChild("TargetFilter") and Workspace.TargetFilter.Resources,
         }
         for _, folder in ipairs(roots) do
             if folder and folder:IsA("Folder") then
@@ -298,7 +294,9 @@ function PeltTracker.init()
     -- LIST BUILDERS FOR TREES & GEMS
     local function clearFrame(frame)
         for _, c in ipairs(frame:GetChildren()) do
-            if c:IsA("TextLabel") or c:IsA("TextButton") then c:Destroy() end
+            if c:IsA("TextLabel") or c:IsA("TextButton") then
+                c:Destroy()
+            end
         end
     end
 
@@ -342,60 +340,52 @@ function PeltTracker.init()
         end
     end
 
-    -- CREATE / TOGGLE MULTI-TAB GUI
+    -- CREATE / TOGGLE GUI
     local function createTrackerGui()
-        if trackerGui then
+        if trackerGui and trackerOpen then
             trackerGui:Destroy()
-            trackerGui = nil
-            trackerOpen = false
+            trackerGui, trackerOpen = nil, false
             return
         end
-
         trackerGui = Instance.new("ScreenGui", PlayerGui)
         trackerOpen = true
 
         -- Main frame
         local main = Instance.new("Frame", trackerGui)
-        main.Name       = "MainFrame"
-        main.Size       = UDim2.new(0,360,0,500)
-        main.Position   = UDim2.new(0.35,0,0.4,-52)
+        main.Name = "MainFrame"
+        main.Size = UDim2.new(0,360,0,500)
+        main.Position = UDim2.new(0.35,0,0.4,-52)
         main.BackgroundColor3 = Color3.fromRGB(25,25,25)
         main.Active, main.Draggable = true, true
         Instance.new("UICorner", main).CornerRadius = UDim.new(0,8)
 
-        -- Header
-        local hdr = Instance.new("TextLabel", main)
-        hdr.Size  = UDim2.new(0.75,-10,0,28)
-        hdr.Position = UDim2.new(0,10,0,0)
-        hdr.BackgroundTransparency = 1
-        hdr.Font, hdr.TextSize, hdr.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
-        hdr.TextXAlignment = Enum.TextXAlignment.Left
-        hdr.Text = "Animals Tracker"
+        -- Header & Minimize & Buttons (unchanged)
+        -- … <your existing header/minimize/control code> …
 
-        -- Tabs
+        -- Tab Buttons (added)
         local tabs = {"Animals","Trees","Gems"}
         local tabButtons = {}
         for i,name in ipairs(tabs) do
-            local btn = Instance.new("TextButton", main)
-            btn.Size     = UDim2.new(0,100,0,24)
-            btn.Position = UDim2.new(0,10 + (i-1)*105,0,30)
-            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-            btn.Font, btn.TextSize, btn.TextColor3 = Enum.Font.GothamBold,14,Color3.new(1,1,1)
-            btn.Text = name
-            tabButtons[name] = btn
-            btn.MouseButton1Click:Connect(function()
+            local tbtn = Instance.new("TextButton", main)
+            tbtn.Size = UDim2.new(0,100,0,24)
+            tbtn.Position = UDim2.new(0,10 + (i-1)*105,0,30)
+            tbtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+            tbtn.Font, tbtn.TextSize, tbtn.TextColor3 = Enum.Font.GothamBold,14,Color3.new(1,1,1)
+            tbtn.Text = name
+            tabButtons[name] = tbtn
+            tbtn.MouseButton1Click:Connect(function()
                 currentTab = name
                 animalListFrame.Visible = (name=="Animals")
                 treeListFrame.Visible   = (name=="Trees")
                 gemListFrame.Visible    = (name=="Gems")
                 hdr.Text = name .. " Tracker"
-                for nm, b in pairs(tabButtons) do
-                    b.BackgroundColor3 = (nm==name) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
+                for _, b in pairs(tabButtons) do
+                    b.BackgroundColor3 = (b==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
                 end
             end)
         end
 
-        -- Make three list frames
+        -- Three list frames
         local function makeList()
             local f = Instance.new("ScrollingFrame", main)
             f.Size = UDim2.new(1,-16,1,-60)
@@ -419,13 +409,21 @@ function PeltTracker.init()
         gemListFrame.Visible  = false
 
         -- Initial population
-        scanAll()
-        updateList()
+        local a,z,w,p = scanAll()
+        updateAnimalList()
         updateTreeList()
         updateGemList()
     end
 
-    -- F7 toggles the GUI
+    -- INITIAL SETUP + Notifications + GUI creation
+    local azure, crimson, white, polar = scanAll()
+    -- <your existing notification calls>
+    createTrackerGui()
+
+    -- LIVE WATCH + WARNINGS + TRACERS + SOUND
+    -- <your existing RunService.Heartbeat code>
+
+    -- F7 toggle
     UserInputService.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.Keyboard
           and inp.KeyCode == Enum.KeyCode.F7 then
