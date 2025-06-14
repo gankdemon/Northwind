@@ -1,8 +1,8 @@
--- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.0
+-- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.1
 local PeltTracker = {}
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.0 + Trees & Gems //--  
-    print("[PeltTracker] Supercharged v1.17.0 starting...")
+    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.1 + Trees & Gems //--  
+    print("[PeltTracker] Supercharged v1.17.1 starting...")
 
     -- CONFIG
     local whiteThreshold       = 240
@@ -207,14 +207,15 @@ function PeltTracker.init()
         return true
     end
 
-    -- BUILD & REFRESH ANIMAL LIST
+    -- UPDATE ANIMAL LIST
     local function updateAnimalList()
         if not animalListFrame then return end
         for _, c in ipairs(animalListFrame:GetChildren()) do
-            if c:IsA("TextLabel") or c:IsA("TextButton") then c:Destroy() end
+            if c:IsA("TextLabel") or c:IsA("TextButton") then
+                c:Destroy()
+            end
         end
         table.clear(buttonMap)
-
         local groups = {}
         for f, info in pairs(animalData) do
             local sp = f.Name:match("([^_]+)_") or f.Name
@@ -224,7 +225,6 @@ function PeltTracker.init()
         local species = {}
         for sp in pairs(groups) do table.insert(species, sp) end
         table.sort(species)
-
         local order = 1
         for _, sp in ipairs(species) do
             local hdr = Instance.new("TextLabel", animalListFrame)
@@ -236,7 +236,6 @@ function PeltTracker.init()
             hdr.TextColor3 = Color3.new(1,1,1)
             hdr.TextXAlignment = Enum.TextXAlignment.Center
             hdr.Text = "─── " .. sp .. " ───"
-
             for _, folder in ipairs(groups[sp]) do
                 local info = animalData[folder]
                 local btn = Instance.new("TextButton", animalListFrame)
@@ -255,7 +254,6 @@ function PeltTracker.init()
                 btn.TextColor3 = info.isExotic and Color3.fromRGB(255,215,0) or Color3.new(1,1,1)
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
                 buttonMap[folder] = btn
-
                 btn.MouseButton1Click:Connect(function()
                     local ok = toggleESP(folder)
                     btn.Text = baseText .. (ok and "  ✅ ESP" or "  ❌ ESP")
@@ -270,15 +268,17 @@ function PeltTracker.init()
         end
     end
 
-    -- TREE SCAN
+    -- TREE SCAN (exclude "pine tree")
     local function scanTrees()
         treeData = {}
         for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
             local root = Workspace:FindFirstChild(rootName)
             local folder = root and root:FindFirstChild("Resources")
-            if folder and folder:IsA("Folder") then
+            if folder then
                 for _, m in ipairs(folder:GetChildren()) do
-                    if m:IsA("Model") and m.Name:lower():match("tree") then
+                    if m:IsA("Model")
+                      and m.Name:lower():match("tree")
+                      and not m.Name:lower():match("pine tree") then
                         table.insert(treeData, m)
                     end
                 end
@@ -293,7 +293,7 @@ function PeltTracker.init()
         for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
             local root = Workspace:FindFirstChild(rootName)
             local folder = root and root:FindFirstChild("Resources")
-            if folder and folder:IsA("Folder") then
+            if folder then
                 for _, m in ipairs(folder:GetChildren()) do
                     if m:IsA("Model") and m.Name:lower():match("deposit") then
                         local ores = m:FindFirstChild("Ores")
@@ -311,50 +311,82 @@ function PeltTracker.init()
         return gemData
     end
 
-    -- LIST BUILDERS FOR TREES & GEMS
-    local function clearFrame(frame)
-        for _, c in ipairs(frame:GetChildren()) do
+    -- UPDATE TREE LIST
+    local function updateTreeList()
+        if not treeListFrame then return end
+        for _, c in ipairs(treeListFrame:GetChildren()) do
             if c:IsA("TextLabel") or c:IsA("TextButton") then
                 c:Destroy()
             end
         end
-    end
-
-    local function makeEntryButton(parent, text)
-        local btn = Instance.new("TextButton", parent)
-        btn.Size            = UDim2.new(1,0,0,28)
-        btn.BackgroundColor3= Color3.fromRGB(45,45,45)
-        btn.BorderSizePixel = 0
-        btn.Font            = Enum.Font.SourceSansSemibold
-        btn.TextSize        = 16
-        btn.TextColor3      = Color3.new(1,1,1)
-        btn.Text            = text
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-        return btn
-    end
-
-    local function updateTreeList()
-        if not treeListFrame then return end
-        clearFrame(treeListFrame)
-        local trees = scanTrees()
-        if #trees == 0 then
-            makeEntryButton(treeListFrame, "No trees found in this server.")
+        local list = scanTrees()
+        if #list == 0 then
+            local lbl = Instance.new("TextLabel", treeListFrame)
+            lbl.Size = UDim2.new(1,0,0,28)
+            lbl.BackgroundTransparency = 1
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 16
+            lbl.TextColor3 = Color3.new(1,1,1)
+            lbl.Text = "No trees found in this server."
         else
-            for _, m in ipairs(trees) do
-                makeEntryButton(treeListFrame, m.Name)
+            for _, m in ipairs(list) do
+                local btn = Instance.new("TextButton", treeListFrame)
+                btn.Size = UDim2.new(1,0,0,28)
+                btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+                btn.BorderSizePixel = 0
+                btn.Font = Enum.Font.SourceSansSemibold
+                btn.TextSize = 16
+                btn.TextColor3 = Color3.new(1,1,1)
+                btn.Text = m.Name
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+                btn.MouseButton1Click:Connect(function()
+                    if toggleESP(m) then
+                        btn.Text = m.Name.."  ✅ ESP"
+                    else
+                        btn.Text = m.Name.."  ❌ ESP"
+                    end
+                    delay(1.5, function() btn.Text = m.Name end)
+                end)
+                btn.InputBegan:Connect(function(inp)
+                    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
+                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then hrp.CFrame = (m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")).CFrame + Vector3.new(0,3,0) end
+                        btn.Text = m.Name.."  📍 TP"
+                        delay(1.5, function() btn.Text = m.Name end)
+                    end
+                end)
             end
         end
     end
 
+    -- UPDATE GEM LIST
     local function updateGemList()
         if not gemListFrame then return end
-        clearFrame(gemListFrame)
-        local gems = scanGems()
-        if #gems == 0 then
-            makeEntryButton(gemListFrame, "No gems found in this server.")
+        for _, c in ipairs(gemListFrame:GetChildren()) do
+            if c:IsA("TextLabel") or c:IsA("TextButton") then
+                c:Destroy()
+            end
+        end
+        local list = scanGems()
+        if #list == 0 then
+            local lbl = Instance.new("TextLabel", gemListFrame)
+            lbl.Size = UDim2.new(1,0,0,28)
+            lbl.BackgroundTransparency = 1
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 16
+            lbl.TextColor3 = Color3.new(1,1,1)
+            lbl.Text = "No gems found in this server."
         else
-            for _, ore in ipairs(gems) do
-                makeEntryButton(gemListFrame, ore.Name)
+            for _, ore in ipairs(list) do
+                local btn = Instance.new("TextButton", gemListFrame)
+                btn.Size = UDim2.new(1,0,0,28)
+                btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+                btn.BorderSizePixel = 0
+                btn.Font = Enum.Font.SourceSansSemibold
+                btn.TextSize = 16
+                btn.TextColor3 = Color3.new(1,1,1)
+                btn.Text = ore.Name
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
             end
         end
     end
@@ -389,7 +421,7 @@ function PeltTracker.init()
 
         -- Minimize button
         local minimized = false
-        local listFrameRef
+        local listRef = nil
         local minBtn = Instance.new("TextButton", main)
         minBtn.Size = UDim2.new(0,28,0,28)
         minBtn.Position = UDim2.new(1,-32,0,0)
@@ -398,7 +430,7 @@ function PeltTracker.init()
         minBtn.Text = "➖"
         minBtn.MouseButton1Click:Connect(function()
             minimized = not minimized
-            if listFrameRef then listFrameRef.Visible = not minimized end
+            if listRef then listRef.Visible = not minimized end
             minBtn.Text = minimized and "➕" or "➖"
             local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
             TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), { Size=newSize }):Play()
@@ -416,9 +448,7 @@ function PeltTracker.init()
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if hrp then hrp.CFrame = hrp.CFrame + Vector3.new(0, TELEPORT_DOWN_DIST, 0) end
             end,
-            function(b) -- rebuild
-                scanAll(); updateAnimalList()
-            end,
+            function() scanAll(); updateAnimalList() end,
         }
         for i,icon in ipairs(ctrlIcons) do
             local b = Instance.new("TextButton", main)
@@ -436,7 +466,7 @@ function PeltTracker.init()
         for i,name in ipairs(tabs) do
             local tbtn = Instance.new("TextButton", main)
             tbtn.Size = UDim2.new(0,100,0,24)
-            tbtn.Position = UDim2.new(0,10 + (i-1)*105,0,30)
+            tbtn.Position = UDim2.new(0,10+(i-1)*105,0,30)
             tbtn.BackgroundColor3= Color3.fromRGB(45,45,45)
             tbtn.BorderSizePixel = 0
             tbtn.AutoButtonColor = false
@@ -453,13 +483,13 @@ function PeltTracker.init()
                 for _,b in pairs(tabButtons) do
                     b.BackgroundColor3 = (b==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
                 end
+                listRef = (name=="Animals" and animalListFrame) or (name=="Trees" and treeListFrame) or gemListFrame
             end)
         end
 
-        -- List frames
+        -- List frames factory
         local function makeList()
             local f = Instance.new("ScrollingFrame", main)
-            f.Name = "List"
             f.Size = UDim2.new(1,-16,1,-60)
             f.Position = UDim2.new(0,8,0,60)
             f.BackgroundTransparency = 1
@@ -477,15 +507,11 @@ function PeltTracker.init()
         animalListFrame = makeList()
         treeListFrame   = makeList()
         gemListFrame    = makeList()
-
-        -- remember reference for minimize
-        listFrameRef = animalListFrame
-
-        -- default state
         treeListFrame.Visible = false
         gemListFrame.Visible  = false
+        listRef = animalListFrame
 
-        -- initial population
+        -- Initial population
         scanAll()
         updateAnimalList()
         updateTreeList()
@@ -497,7 +523,7 @@ function PeltTracker.init()
     if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
     if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
     if #white   > 0 then createNotification("White Pelts Detected",   ("Found %d White: %s"):format(#white,   table.concat(white,",")),   Color3.fromRGB(200,200,200)) end
-    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")),   Color3.fromRGB(180,180,220)) end
+    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")), Color3.fromRGB(180,180,220)) end
     if #azure==0 and #crimson==0 and #white==0 and #polar==0 then
         createNotification("No Exotic Pelts","No Azure, Crimson, White, or Polar detected.",Color3.fromRGB(80,80,80))
     end
@@ -507,7 +533,6 @@ function PeltTracker.init()
     local lw, lt = 0,0
     RunService.Heartbeat:Connect(function(dt)
         lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
-
         if lw >= WARNING_INTERVAL then
             lw = 0
             local parts = {}
@@ -537,7 +562,6 @@ function PeltTracker.init()
                 btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","") .. icon
             end
         end
-
         if lt >= TRACE_INTERVAL then
             lt = 0
             local cam = Workspace.CurrentCamera
@@ -558,7 +582,8 @@ function PeltTracker.init()
 
     -- TOGGLE GUI with F7
     UserInputService.InputBegan:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 then
+        if inp.UserInputType==Enum.UserInputType.Keyboard
+          and inp.KeyCode==Enum.KeyCode.F7 then
             createTrackerGui()
         end
     end)
