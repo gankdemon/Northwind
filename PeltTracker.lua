@@ -342,38 +342,46 @@ function PeltTracker.init()
         end
     end
 
-    -- Robust gem scanner: finds every descendant named *Uncut* under any *deposit* model
+    -- Robust, logged gem scanner
 local function scanGems()
     gemData = {}
 
-    -- find the Resources containers under both StaticProps and TargetFilter
-    for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
-        local root = Workspace:FindFirstChild(rootName)
-        local resources = root and root:FindFirstChild("Resources")
+    for _, rootName in ipairs({"StaticProps", "TargetFilter"}) do
+        -- wait up to 5 seconds for the root + Resources folder to exist
+        local root = Workspace:FindFirstChild(rootName) 
+                  or Workspace:WaitForChild(rootName, 5)
+        if not root then
+            warn(("[PeltTracker]  ✖ couldn’t find Workspace.%s"):format(rootName))
+            continue
+        end
+
+        local resources = root:FindFirstChild("Resources")
+                       or root:WaitForChild("Resources", 5)
         if not resources then
-            warn(("[PeltTracker] No Resources folder under %s"):format(rootName))
-        else
-            -- for each direct child (hopefully your “Illegal gold deposit”, etc.)
-            for _, deposit in ipairs(resources:GetChildren()) do
-                if deposit:IsA("Model") and deposit.Name:lower():match("deposit") then
-                    -- now scan every descendant in that model
-                    for _, node in ipairs(deposit:GetDescendants()) do
-                        -- match “uncut” anywhere in the name
-                        if node:IsA("BasePart") 
-                           and node.Name:lower():match("uncut") then
-                            
-                            table.insert(gemData, node)
-                            -- debug
-                            print(("[PeltTracker] ➤ Found gem node '%s' in deposit '%s'")
-                                  :format(node:GetFullName(), deposit.Name))
-                        end
+            warn(("[PeltTracker]  ✖ %s.Resources missing"):format(rootName))
+            continue
+        end
+
+        -- dump what deposits we see
+        for _, deposit in ipairs(resources:GetChildren()) do
+            if deposit:IsA("Model") and deposit.Name:lower():match("deposit") then
+                print(("[PeltTracker] → Scanning deposit: %s"):format(deposit:GetFullName()))
+                
+                -- now scan every descendant under this deposit
+                for _, node in ipairs(deposit:GetDescendants()) do
+                    if node:IsA("BasePart") and node.Name:lower():match("uncut") then
+                        table.insert(gemData, node)
+                        print(("[PeltTracker]     • Found gem node: %s"):format(node:GetFullName()))
                     end
                 end
+            else
+                -- uncomment if you want to see everything that *isn’t* a deposit
+                -- print(("Skipping %s (%s)"):format(deposit.Name, deposit.ClassName))
             end
         end
     end
 
-    print(("[PeltTracker] scanGems total found: %d"):format(#gemData))
+    print(("[PeltTracker] ◦ scanGems total found: %d"):format(#gemData))
     return gemData
 end
 
