@@ -99,7 +99,7 @@ function PeltTracker.init()
         gui.ResetOnSpawn = false
         local f = Instance.new("Frame", gui)
         f.Size = UDim2.new(0,400,0,100)
-        f.Position = UDim2.new(1.05,0,0.75,0)
+        f.Position = UDim2.new(0.949999988, 0, 0.670000017, 0)
         f.AnchorPoint = Vector2.new(1,0)
         f.BackgroundColor3 = bg
         f.BorderSizePixel = 0
