@@ -84,7 +84,7 @@ local function createTeleportHubUI()
     mainFrame.Name               = "MainFrame"
     mainFrame.Size               = UDim2.new(0, FRAME_WIDTH, 0, frameHeight)
     mainFrame.AnchorPoint = Vector2.new(0, 0)
-    mainFrame.Position    = UDim2.new(0.174999997, -16, 0.100000001, -104)
+    mainFrame.Position    = UDim2.new(0.174999997, 342, 0.100000001, -95)
 
     mainFrame.BackgroundColor3   = Color3.fromRGB(25, 25, 25)
     mainFrame.BorderSizePixel    = 0
