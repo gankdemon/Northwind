@@ -457,7 +457,7 @@ end)
         local main = Instance.new("Frame", trackerGui)
         main.Name = "MainFrame"
         main.Size = UDim2.new(0,360,0,500)
-        main.Position = UDim2.new(0.35,0,0.4,-52)
+        main.Position = UDim2.new({0.349999994, -353, 0.400000006, -383)
         main.BackgroundColor3 = Color3.fromRGB(25,25,25)
         main.Active, main.Draggable = true, true
         Instance.new("UICorner", main).CornerRadius = UDim.new(0,8)
