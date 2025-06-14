@@ -1,8 +1,8 @@
--- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.2
+-- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.3
 local PeltTracker = {}
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.2 + Trees & Gems //--  
-    print("[PeltTracker] Supercharged v1.17.2 starting...")
+    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.3 + Trees & Gems //--  
+    print("[PeltTracker] Supercharged v1.17.3 starting...")
 
     -- CONFIG
     local whiteThreshold       = 240
@@ -61,7 +61,7 @@ function PeltTracker.init()
     local function classifyColor(c)
         local r,g,b = toRGB(c)
         local avg = (r+g+b)/3
-        -- Exotic
+        -- Exotic pelts
         if r>=whiteThreshold and g>=whiteThreshold and b>=whiteThreshold then
             return "White", true
         end
@@ -74,7 +74,7 @@ function PeltTracker.init()
         if (b>=200 and r<=80 and g<=80) or (b>r and b>g and avg<100) then
             return "Azure", true
         end
-        -- Common
+        -- New common pelts
         if math.abs(r-63)<=5  and math.abs(g-62)<=5  and math.abs(b-51)<=5  then return "Glade",    false end
         if math.abs(r-71)<=5  and math.abs(g-51)<=5  and math.abs(b-51)<=5  then return "Hazel",    false end
         if math.abs(r-99)<=5  and math.abs(g-89)<=5  and math.abs(b-70)<=5  then return "Kermode",  false end
@@ -82,6 +82,7 @@ function PeltTracker.init()
         if math.abs(r-138)<=5 and math.abs(g-83)<=5  and math.abs(b-60)<=5  then return "Cinnamon", false end
         if math.abs(r-168)<=5 and math.abs(g-130)<=5 and math.abs(b-103)<=5 then return "Blonde",   false end
         if math.abs(r-124)<=5 and math.abs(g-80)<=5  and math.abs(b-48)<=5  then return "Beige",    false end
+        -- Other common/non-exotic
         if r>=150 and g>=80 and g<=110 and b<=80 then return "Orange", false end
         if r<=50 and g<=50 and b<=50 then return "Black", false end
         if math.abs(r-g)<=20 and math.abs(r-b)<=20 and math.abs(g-b)<=20 then
@@ -185,14 +186,14 @@ function PeltTracker.init()
             return false
         end
         local box = Instance.new("BoxHandleAdornment", part)
-        box.Name = "__PeltESP"; box.Adornee = part; box.AlwaysOnTop = true; box.ZIndex = 10
+        box.Name = "__PeltESP"; box.Ador nee = part; box.AlwaysOnTop = true; box.ZIndex = 10
         box.Size = part.Size * 5; box.Color3 = Color3.fromRGB(57,255,20); box.Transparency = 0.7
         local cam = Workspace.CurrentCamera
         local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
         local line = Drawing.new("Line")
         line.Visible = true; line.Thickness = 2; line.Color = box.Color3
         line.From = center; line.To = center
-        tracerData[folder] = {box = box, line = line}
+        tracerData[folder] = { box = box, line = line }
         return true
     end
 
@@ -200,7 +201,9 @@ function PeltTracker.init()
     local function updateAnimalList()
         if not animalListFrame then return end
         for _, c in ipairs(animalListFrame:GetChildren()) do
-            if c:IsA("TextLabel") or c:IsA("TextButton") then c:Destroy() end
+            if c:IsA("TextLabel") or c:IsA("TextButton") then
+                c:Destroy()
+            end
         end
         table.clear(buttonMap)
         local groups = {}
@@ -287,7 +290,7 @@ function PeltTracker.init()
             return false
         end
         local box = Instance.new("BoxHandleAdornment", part)
-        box.Name = "__TreeESP"; box.Adornee = part; box.AlwaysOnTop = true; box.ZIndex = 10
+        box.Name = "__TreeESP"; box.Ador nee = part; box.AlwaysOnTop = true; box.ZIndex = 10
         box.Size = part.Size * 1.2; box.Color3 = Color3.fromRGB(0,200,255); box.Transparency = 0.5
         local cam = Workspace.CurrentCamera
         local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
@@ -355,7 +358,7 @@ function PeltTracker.init()
                         local ores = m:FindFirstChild("Ores")
                         if ores and ores:IsA("Folder") then
                             for _, ore in ipairs(ores:GetChildren()) do
-                                if ore.Name:match("^Uncut") then
+                                if ore.Name:lower():match("^uncut") then
                                     table.insert(gemData, ore)
                                 end
                             end
@@ -411,7 +414,7 @@ function PeltTracker.init()
         main.Active, main.Draggable = true, true
         Instance.new("UICorner", main).CornerRadius = UDim.new(0,8)
 
-        -- Header
+        -- Header & Minimize
         local hdr = Instance.new("TextLabel", main)
         hdr.Size = UDim2.new(0.75,-10,0,28)
         hdr.Position = UDim2.new(0,10,0,0)
@@ -420,7 +423,6 @@ function PeltTracker.init()
         hdr.TextXAlignment = Enum.TextXAlignment.Left
         hdr.Text = "Pelt tracker"
 
-        -- Minimize button
         local minimized = false
         local listRef = nil
         local minBtn = Instance.new("TextButton", main)
@@ -429,9 +431,17 @@ function PeltTracker.init()
         minBtn.BackgroundTransparency = 1
         minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
         minBtn.Text = "➖"
+
+        -- we'll fill tabButtons below
+        local tabButtons = {}
+
         minBtn.MouseButton1Click:Connect(function()
             minimized = not minimized
             if listRef then listRef.Visible = not minimized end
+            -- hide/show tabs too
+            for _, btn in pairs(tabButtons) do
+                btn.Visible = not minimized
+            end
             minBtn.Text = minimized and "➕" or "➖"
             local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
             TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), {Size=newSize}):Play()
@@ -445,58 +455,67 @@ function PeltTracker.init()
             function() local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"); if hrp then hrp.CFrame=hrp.CFrame*CFrame.new(0,TELEPORT_DOWN_DIST,0) end end,
             function() scanAll(); updateAnimalList() end,
         }
-        for i,icon in ipairs(ctrlIcons) do
-            local b=Instance.new("TextButton", main)
-            b.Size=UDim2.new(0,28,0,28); b.Position=UDim2.new(1,-32*(i+1),0,0)
-            b.BackgroundTransparency=1; b.Font, b.TextSize, b.TextColor3=Enum.Font.GothamBold,18,Color3.new(1,1,1)
-            b.Text=icon; b.MouseButton1Click:Connect(ctrlFuncs[i])
+        for i, icon in ipairs(ctrlIcons) do
+            local b = Instance.new("TextButton", main)
+            b.Size = UDim2.new(0,28,0,28)
+            b.Position = UDim2.new(1,-32*(i+1),0,0)
+            b.BackgroundTransparency, b.Font, b.TextSize, b.TextColor3 = 1, Enum.Font.GothamBold, 18, Color3.new(1,1,1)
+            b.Text = icon
+            b.MouseButton1Click:Connect(ctrlFuncs[i])
         end
 
         -- Tabs (rounded, no border)
         local tabs = {"Animals","Trees","Gems"}
-        local tabButtons = {}
         for i,name in ipairs(tabs) do
-            local tbtn=Instance.new("TextButton", main)
-            tbtn.Size=UDim2.new(0,100,0,24); tbtn.Position=UDim2.new(0,10+(i-1)*105,0,30)
-            tbtn.BackgroundColor3=Color3.fromRGB(45,45,45); tbtn.BorderSizePixel=0; tbtn.AutoButtonColor=false
-            tbtn.Font, tbtn.TextSize, tbtn.TextColor3=Enum.Font.GothamBold,14,Color3.new(1,1,1)
-            tbtn.Text=name; Instance.new("UICorner", tbtn).CornerRadius=UDim.new(0,6)
-            tabButtons[name]=tbtn
+            local tbtn = Instance.new("TextButton", main)
+            tbtn.Size = UDim2.new(0,100,0,24)
+            tbtn.Position = UDim2.new(0,10+(i-1)*105,0,30)
+            tbtn.BackgroundColor3, tbtn.BorderSizePixel, tbtn.AutoButtonColor = Color3.fromRGB(45,45,45), 0, false
+            tbtn.Font, tbtn.TextSize, tbtn.TextColor3 = Enum.Font.GothamBold,14,Color3.new(1,1,1)
+            tbtn.Text = name
+            Instance.new("UICorner", tbtn).CornerRadius = UDim.new(0,6)
+            tabButtons[name] = tbtn
             tbtn.MouseButton1Click:Connect(function()
-                currentTab=name
-                animalListFrame.Visible=(name=="Animals")
-                treeListFrame.Visible=(name=="Trees")
-                gemListFrame.Visible=(name=="Gems")
-                hdr.Text=name.." Tracker"
-                for _,b in pairs(tabButtons) do
-                    b.BackgroundColor3=(b==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
+                currentTab = name
+                animalListFrame.Visible = (name=="Animals")
+                treeListFrame.Visible   = (name=="Trees")
+                gemListFrame.Visible    = (name=="Gems")
+                hdr.Text = name.." Tracker"
+                for _,btn in pairs(tabButtons) do
+                    btn.BackgroundColor3 = (btn==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
                 end
             end)
         end
 
         -- List frames factory
         local function makeList()
-            local f=Instance.new("ScrollingFrame", main)
-            f.Size=UDim2.new(1,-16,1,-60); f.Position=UDim2.new(0,8,0,60)
-            f.BackgroundTransparency=1; f.ScrollBarThickness=6
-            Instance.new("UICorner", f).CornerRadius=UDim.new(0,6)
-            local layout=Instance.new("UIListLayout", f)
-            layout.Padding=UDim.new(0,4); layout.SortOrder=Enum.SortOrder.LayoutOrder
+            local f = Instance.new("ScrollingFrame", main)
+            f.Size = UDim2.new(1,-16,1,-60)
+            f.Position = UDim2.new(0,8,0,60)
+            f.BackgroundTransparency = 1
+            f.ScrollBarThickness = 6
+            Instance.new("UICorner", f).CornerRadius = UDim.new(0,6)
+            local layout = Instance.new("UIListLayout", f)
+            layout.Padding = UDim.new(0,4)
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
             layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                f.CanvasSize=UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
+                f.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
             end)
             return f
         end
 
-        animalListFrame=makeList()
-        treeListFrame=makeList()
-        gemListFrame=makeList()
-        treeListFrame.Visible=false
-        gemListFrame.Visible=false
-        listRef=animalListFrame
+        animalListFrame = makeList()
+        treeListFrame   = makeList()
+        gemListFrame    = makeList()
+        treeListFrame.Visible = false
+        gemListFrame.Visible  = false
+        listRef = animalListFrame
 
         -- Initial population
-        scanAll(); updateAnimalList(); updateTreeList(); updateGemList()
+        scanAll()
+        updateAnimalList()
+        updateTreeList()
+        updateGemList()
     end
 
     -- INITIAL SETUP + NOTIFICATIONS
@@ -514,6 +533,7 @@ function PeltTracker.init()
     local lw, lt = 0,0
     RunService.Heartbeat:Connect(function(dt)
         lw, lt, lastAlertSound = lw+dt, lt+dt, lastAlertSound+dt
+
         if lw >= WARNING_INTERVAL then
             lw = 0
             local parts = {}
@@ -527,43 +547,50 @@ function PeltTracker.init()
                 local btn = buttonMap[folder]
                 if not btn then continue end
                 local icon = ""
-                for _, ppos in ipairs(parts) do
-                    local d=(ppos - info.torso.Position).Magnitude
+                for _, pos in ipairs(parts) do
+                    local d = (pos - info.torso.Position).Magnitude
                     if d<=Settings.maxTrackDist then
                         icon=" 🚨"
                         if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
-                            alertSound:Play(); lastAlertSound=0
+                            alertSound:Play()
+                            lastAlertSound = 0
                         end
                         break
                     elseif d<=Settings.maxTrackDist*1.5 then
                         icon=" ⚠️"
                     end
                 end
-                btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","")..icon
+                btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","") .. icon
             end
         end
-        if lt>=TRACE_INTERVAL then
-            lt=0
-            local cam=Workspace.CurrentCamera
-            local center=Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y/2)
+
+        if lt >= TRACE_INTERVAL then
+            lt = 0
+            local cam = Workspace.CurrentCamera
+            local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+
             for _, data in pairs(tracerData) do
-                data.line.Visible=true
-                local pos,vis=cam:WorldToViewportPoint(data.box.Adornee.Position+Vector3.new(0,data.box.Adornee.Size.Y/2,0))
+                data.line.Visible = true
+                local part = data.box.Adornee
+                local pos, vis = cam:WorldToViewportPoint(part.Position + Vector3.new(0, part.Size.Y/2, 0))
                 if vis then
-                    data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y)
+                    data.line.From = center
+                    data.line.To = Vector2.new(pos.X, pos.Y)
                 else
-                    data.line.Visible=false
+                    data.line.Visible = false
                 end
             end
-            for model,data in pairs(treeTracerData) do
-                data.line.Visible=true
-                local part=model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+
+            for model, data in pairs(treeTracerData) do
+                data.line.Visible = true
+                local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
                 if part then
-                    local pos,vis=Workspace.CurrentCamera:WorldToViewportPoint(part.Position)
+                    local pos, vis = cam:WorldToViewportPoint(part.Position)
                     if vis then
-                        data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y)
+                        data.line.From = center
+                        data.line.To = Vector2.new(pos.X, pos.Y)
                     else
-                        data.line.Visible=false
+                        data.line.Visible = false
                     end
                 end
             end
