@@ -349,7 +349,7 @@ end)
     -- ROBUST, LOGGED GEM SCANNER
     local function scanGems()
         gemData = {}
-        for _, rootName in ipairs({"StaticProps", "TargetFilter"}) do
+        for _, rootName in ipairs({"TargetFilter", "StaticProps"}) do
             local root = Workspace:FindFirstChild(rootName) or Workspace:WaitForChild(rootName,5)
             if not root then
                 warn(("[PeltTracker] ✖ couldn’t find Workspace.%s"):format(rootName))
