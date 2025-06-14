@@ -279,7 +279,7 @@ local function createTrackerGui()
     local main = Instance.new("Frame", trackerGui)
     main.Name            = "MainFrame"
     main.Size            = UDim2.new(0, FRAME_WIDTH, 0, FRAME_MIN_HEIGHT)
-    main.Position        = UDim2.new(0.35, -352, 0.70, -474)
+    main.Position        = UDim2.new(0.349999994, 365, 0.699999988, -670)
     main.BackgroundColor3= Color3.fromRGB(25,25,25)
     main.BorderSizePixel = 0
     main.Active          = true
