@@ -41,10 +41,10 @@ local function fetchModule(url)
 end
 
 -- 6. URLs for modules (raw)
-local staffUrl = "https://raw.githubusercontent.com/gankdemon/Northwind/main/StaffTracker.lua"
-local peltUrl  = "https://raw.githubusercontent.com/gankdemon/Northwind/main/PeltTracker.lua"
-local teleporterUrl = "https://raw.githubusercontent.com/gankdemon/Northwind/main/teleporter.lua"
-local treasureUrl = "https://raw.githubusercontent.com/gankdemon/Northwind/main/treasureTracker.lua" 
+local staffUrl = "https://raw.githubusercontent.com/kingvonenjoyer/Northwind/main/StaffTracker.lua"
+local peltUrl  = "https://raw.githubusercontent.com/kingvonenjoyer/Northwind/main/PeltTracker.lua"
+local teleporterUrl = "https://raw.githubusercontent.com/kingvonenjoyer/Northwind/main/teleporter.lua"
+local treasureUrl = "https://raw.githubusercontent.com/kingvonenjoyer/Northwind/main/treasureTracker.lua" 
 local infiniteyieldUrl = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
 
 -- 7. Load and initialize modules
