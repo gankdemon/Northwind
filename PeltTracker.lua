@@ -429,13 +429,24 @@ function PeltTracker.init()
         minBtn.BackgroundTransparency = 1
         minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
         minBtn.Text = "➖"
-        minBtn.MouseButton1Click:Connect(function()
-            minimized = not minimized
-            if listRef then listRef.Visible = not minimized end
-            minBtn.Text = minimized and "➕" or "➖"
-            local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
-            TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), {Size=newSize}):Play()
-        end)
+            minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+
+        -- hide/show the current list
+        if listRef then listRef.Visible = not minimized end
+
+        -- hide/show the tab buttons
+        for _, btn in pairs(tabButtons) do
+            btn.Visible = not minimized
+        end
+
+        -- update the “–/+” icon
+        minBtn.Text = minimized and "➕" or "➖"
+
+        -- animate your frame
+        local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
+        TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Size = newSize }):Play()
+    end)
 
         -- Control buttons 🔊 ⚙️ ⏬ 🔄
         local ctrlIcons = {"🔊","⚙️","⏬","🔄"}
