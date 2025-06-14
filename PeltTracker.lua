@@ -1,7 +1,7 @@
--- PeltTracker with new exotic and common pelts v1.17 + Tree & Gem Tracker v1.2
+-- PeltTracker with new exotic and common pelts v1.17.2 + Tree & Gem Tracker v1.2
 local PeltTracker = {}
 function PeltTracker.init()
-    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.2 + Trees & Gems //--  
+    --// ANIMAL PELT TRACKER with Supercharged Extras v1.17.2 + Trees & Gems //--
     print("[PeltTracker] Supercharged v1.17.2 starting...")
 
     -- CONFIG
@@ -45,19 +45,19 @@ function PeltTracker.init()
     local animalData     = {}   -- folder → { torso, color, isExotic, markers }
     local treeData       = {}   -- array of tree models
     local gemData        = {}   -- array of ore instances
-    local buttonMap      = {}   -- folder → TextButton
-    local tracerData     = {}   -- folder → { box, line }
+    local buttonMap      = {}   -- folder/model → TextButton
+    local tracerData     = {}   -- folder/model → { box, line }
     local treeTracerData = {}   -- model → { box, line }
     local trackerGui, trackerOpen
     local currentTab     = "Animals"
     local animalListFrame, treeListFrame, gemListFrame
+    local tabButtons     = {}
 
     -- UTILITIES
     local function toRGB(c)
         return math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255)
     end
 
-    -- classifyColor now includes Polar & White as exotic, plus common pelts
     local function classifyColor(c)
         local r,g,b = toRGB(c)
         local avg = (r+g+b)/3
@@ -179,7 +179,6 @@ function PeltTracker.init()
             existing:Destroy()
             if tracerData[folder] then
                 tracerData[folder].line:Remove()
-                tracerData[folder].box:Destroy()
                 tracerData[folder] = nil
             end
             return false
@@ -343,7 +342,7 @@ function PeltTracker.init()
         end
     end
 
-    -- SCAN GEMS
+    -- SCAN GEMS (match any “uncut”, case-insensitive)
     local function scanGems()
         gemData = {}
         for _, rootName in ipairs({"StaticProps","TargetFilter"}) do
@@ -355,7 +354,7 @@ function PeltTracker.init()
                         local ores = m:FindFirstChild("Ores")
                         if ores and ores:IsA("Folder") then
                             for _, ore in ipairs(ores:GetChildren()) do
-                                if ore.Name:match("^Uncut") then
+                                if ore.Name:lower():match("uncut") then
                                     table.insert(gemData, ore)
                                 end
                             end
@@ -364,11 +363,11 @@ function PeltTracker.init()
                 end
             end
         end
-        print("[PeltTracker] scanGems found", #gemData, "ores")
+        print("[PeltTracker] scanGems found", #gemData, "gems")
         return gemData
     end
 
-    -- UPDATE GEM LIST
+    -- UPDATE GEM LIST (with ESP + teleport)
     local function updateGemList()
         if not gemListFrame then return end
         for _, c in ipairs(gemListFrame:GetChildren()) do
@@ -388,6 +387,53 @@ function PeltTracker.init()
                 btn.Font, btn.TextSize, btn.TextColor3 = Enum.Font.SourceSansSemibold,16,Color3.new(1,1,1)
                 btn.Text = ore.Name
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+                local function toggleGemESP(model)
+                    local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+                    if not part then return false end
+                    local existing = part:FindFirstChild("__GemESP")
+                    if existing then
+                        existing:Destroy()
+                        if tracerData[model] then
+                            tracerData[model].line:Remove()
+                            tracerData[model] = nil
+                        end
+                        return false
+                    end
+                    local box = Instance.new("BoxHandleAdornment", part)
+                    box.Name = "__GemESP"; box.Adornee = part; box.AlwaysOnTop = true; box.ZIndex = 10
+                    box.Size = part.Size * 1.2; box.Color3 = Color3.fromRGB(255,255,100); box.Transparency = 0.5
+                    local cam = Workspace.CurrentCamera
+                    local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+                    local line = Drawing.new("Line")
+                    line.Visible = true; line.Thickness = 2; line.Color = box.Color3
+                    line.From = center; line.To = center
+                    tracerData[model] = {box = box, line = line}
+                    return true
+                end
+
+                btn.MouseButton1Click:Connect(function()
+                    if toggleGemESP(ore) then
+                        btn.Text = ore.Name .. "  ✅ ESP"
+                    else
+                        btn.Text = ore.Name .. "  ❌ ESP"
+                    end
+                    delay(1.5, function() btn.Text = ore.Name end)
+                end)
+
+                btn.InputBegan:Connect(function(inp)
+                    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
+                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            local part = ore.PrimaryPart or ore:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                hrp.CFrame = part.CFrame + Vector3.new(0,3,0)
+                            end
+                        end
+                        btn.Text = ore.Name.."  📍 TP"
+                        delay(1.5, function() btn.Text = ore.Name end)
+                    end
+                end)
             end
         end
     end
@@ -429,24 +475,19 @@ function PeltTracker.init()
         minBtn.BackgroundTransparency = 1
         minBtn.Font, minBtn.TextSize, minBtn.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
         minBtn.Text = "➖"
-            minBtn.MouseButton1Click:Connect(function()
-        minimized = not minimized
-
-        -- hide/show the current list
-        if listRef then listRef.Visible = not minimized end
-
-        -- hide/show the tab buttons
-        for _, btn in pairs(tabButtons) do
-            btn.Visible = not minimized
-        end
-
-        -- update the “–/+” icon
-        minBtn.Text = minimized and "➕" or "➖"
-
-        -- animate your frame
-        local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
-        TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Size = newSize }):Play()
-    end)
+        minBtn.MouseButton1Click:Connect(function()
+            minimized = not minimized
+            -- hide/show the tab buttons and the current list frame, keep header and controls
+            for _, b in pairs(tabButtons) do
+                b.Visible = not minimized
+            end
+            if listRef then
+                listRef.Visible = not minimized
+            end
+            minBtn.Text = minimized and "➕" or "➖"
+            local newSize = minimized and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,500)
+            TweenService:Create(main, TweenInfo.new(0.3,Enum.EasingStyle.Quad), {Size=newSize}):Play()
+        end)
 
         -- Control buttons 🔊 ⚙️ ⏬ 🔄
         local ctrlIcons = {"🔊","⚙️","⏬","🔄"}
@@ -454,18 +495,21 @@ function PeltTracker.init()
             function(b) soundEnabled = not soundEnabled; b.TextColor3 = soundEnabled and Color3.fromRGB(0,255,0) or Color3.new(1,1,1) end,
             function() createNotification("Settings","Coming soon",Color3.fromRGB(70,70,70)) end,
             function() local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"); if hrp then hrp.CFrame=hrp.CFrame*CFrame.new(0,TELEPORT_DOWN_DIST,0) end end,
-            function() scanAll(); updateAnimalList() end,
+            function()
+                scanAll(); updateAnimalList()
+                updateTreeList()
+                updateGemList()
+            end,
         }
         for i,icon in ipairs(ctrlIcons) do
             local b=Instance.new("TextButton", main)
             b.Size=UDim2.new(0,28,0,28); b.Position=UDim2.new(1,-32*(i+1),0,0)
             b.BackgroundTransparency=1; b.Font, b.TextSize, b.TextColor3=Enum.Font.GothamBold,18,Color3.new(1,1,1)
-            b.Text=icon; b.MouseButton1Click:Connect(ctrlFuncs[i])
+            b.Text=icon; b.MouseButton1Click:Connect(function() ctrlFuncs[i](b) end)
         end
 
         -- Tabs (rounded, no border)
         local tabs = {"Animals","Trees","Gems"}
-        local tabButtons = {}
         for i,name in ipairs(tabs) do
             local tbtn=Instance.new("TextButton", main)
             tbtn.Size=UDim2.new(0,100,0,24); tbtn.Position=UDim2.new(0,10+(i-1)*105,0,30)
@@ -482,6 +526,7 @@ function PeltTracker.init()
                 for _,b in pairs(tabButtons) do
                     b.BackgroundColor3=(b==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
                 end
+                listRef = ({Animals=animalListFrame, Trees=treeListFrame, Gems=gemListFrame})[name]
             end)
         end
 
@@ -515,7 +560,7 @@ function PeltTracker.init()
     if #azure   > 0 then createNotification("Azure Pelts Detected",   ("Found %d Azure: %s"):format(#azure,   table.concat(azure,",")),   Color3.fromRGB(0,0,128)) end
     if #crimson > 0 then createNotification("Crimson Pelts Detected", ("Found %d Crimson: %s"):format(#crimson, table.concat(crimson,",")), Color3.fromRGB(220,20,60)) end
     if #white   > 0 then createNotification("White Pelts Detected",   ("Found %d White: %s"):format(#white,   table.concat(white,",")),   Color3.fromRGB(200,200,200)) end
-    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")), Color3.fromRGB(180,180,220)) end
+    if #polar   > 0 then createNotification("Polar Pelts Detected",   ("Found %d Polar: %s"):format(#polar,   table.concat(polar,",")),   Color3.fromRGB(180,180,220)) end
     if #azure==0 and #crimson==0 and #white==0 and #polar==0 then
         createNotification("No Exotic Pelts","No Azure, Crimson, White, or Polar detected.",Color3.fromRGB(80,80,80))
     end
