@@ -235,9 +235,14 @@ function PeltTracker.init()
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
                 buttonMap[folder] = btn
                 btn.MouseButton1Click:Connect(function()
-                    local ok = toggleESP(folder)
-                    btn.Text = baseText .. (ok and "  ✅ ESP" or "  ❌ ESP")
-                end)
+    local ok = toggleESP(folder)
+    if ok then
+        btn.Text = baseText .. "  ✅ ESP"
+    else
+        btn.Text = baseText
+    end
+end)
+
                 btn.InputBegan:Connect(function(inp)
                     if inp.UserInputType == Enum.UserInputType.MouseButton2 then
                         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -316,14 +321,14 @@ function PeltTracker.init()
                 btn.Font, btn.TextSize, btn.TextColor3 = Enum.Font.SourceSansSemibold,16,Color3.new(1,1,1)
                 btn.Text = m.Name
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-                btn.MouseButton1Click:Connect(function()
-                    if toggleTreeESP(m) then
-                        btn.Text = m.Name.."  ✅ ESP"
-                    else
-                        btn.Text = m.Name.."  ❌ ESP"
-                    end
-                    delay(1.5, function() btn.Text = m.Name end)
-                end)
+               btn.MouseButton1Click:Connect(function()
+    if toggleTreeESP(m) then
+        btn.Text = m.Name .. "  ✅ ESP"
+    else
+        btn.Text = m.Name
+    end
+end)
+
                 btn.InputBegan:Connect(function(inp)
                     if inp.UserInputType == Enum.UserInputType.MouseButton2 then
                         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -416,13 +421,13 @@ function PeltTracker.init()
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
 
                 btn.MouseButton1Click:Connect(function()
-                    if toggleGemESP(node) then
-                        btn.Text = node.Name .. "  ✅ ESP"
-                    else
-                        btn.Text = node.Name .. "  ❌ ESP"
-                    end
-                    delay(1.5, function() btn.Text = node.Name end)
-                end)
+    if toggleGemESP(node) then
+        btn.Text = node.Name .. "  ✅ ESP"
+    else
+        btn.Text = node.Name
+    end
+end)
+
 
                 btn.InputBegan:Connect(function(inp)
                     if inp.UserInputType == Enum.UserInputType.MouseButton2 then
