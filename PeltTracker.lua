@@ -42,9 +42,9 @@ function PeltTracker.init()
     }
 
     -- CORE STATE
-    local animalData     = {}   -- folder → { torso, color, isExotic, markers }
+    local animalData     = {}   -- folder → { torso, color, isExotic }
     local treeData       = {}   -- array of tree models
-    local gemData        = {}   -- array of ore instances
+    local gemData        = {}   -- array of BasePart gem nodes
     local buttonMap      = {}   -- folder/model → TextButton
     local tracerData     = {}   -- folder/model → { box, line }
     local treeTracerData = {}   -- model → { box, line }
@@ -155,13 +155,12 @@ function PeltTracker.init()
                 local torso = f:FindFirstChild("Character") and f.Character:FindFirstChild("Torso")
                 if torso then
                     local name, ex = classifyColor(torso.Color)
-                    animalData[f] = { torso = torso, color = name, isExotic = ex, markers = nil }
+                    animalData[f] = { torso = torso, color = name, isExotic = ex }
                     if ex then
-                        if name == "Azure"   then table.insert(azureList,   f.Name)
+                        if name == "Azure" then table.insert(azureList, f.Name)
                         elseif name == "Crimson" then table.insert(crimsonList, f.Name)
-                        elseif name == "White"   then table.insert(whiteList,   f.Name)
-                        elseif name == "Polar"   then table.insert(polarList,   f.Name)
-                        end
+                        elseif name == "White" then table.insert(whiteList, f.Name)
+                        elseif name == "Polar" then table.insert(polarList, f.Name) end
                     end
                 end
             end
@@ -169,7 +168,7 @@ function PeltTracker.init()
         return azureList, crimsonList, whiteList, polarList
     end
 
-    -- ESP & TRACER for animals
+    -- ESP & TRACER for Animals
     local function toggleESP(folder)
         local info = animalData[folder]
         if not info then return false end
@@ -191,7 +190,7 @@ function PeltTracker.init()
         local line = Drawing.new("Line")
         line.Visible = true; line.Thickness = 2; line.Color = box.Color3
         line.From = center; line.To = center
-        tracerData[folder] = {box = box, line = line}
+        tracerData[folder] = { box = box, line = line }
         return true
     end
 
@@ -272,7 +271,7 @@ function PeltTracker.init()
         return treeData
     end
 
-    -- ESP & TRACER for trees
+    -- ESP & TRACER for Trees
     local function toggleTreeESP(model)
         local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
         if not part then return false end
@@ -293,7 +292,7 @@ function PeltTracker.init()
         local line = Drawing.new("Line")
         line.Visible = true; line.Thickness = 2; line.Color = box.Color3
         line.From = center; line.To = center
-        treeTracerData[model] = {box = box, line = line}
+        treeTracerData[model] = { box = box, line = line }
         return true
     end
 
@@ -342,50 +341,60 @@ function PeltTracker.init()
         end
     end
 
-    -- Robust, logged gem scanner
-local function scanGems()
-    gemData = {}
-
-    for _, rootName in ipairs({"StaticProps", "TargetFilter"}) do
-        -- wait up to 5 seconds for the root + Resources folder to exist
-        local root = Workspace:FindFirstChild(rootName) 
-                  or Workspace:WaitForChild(rootName, 5)
-        if not root then
-            warn(("[PeltTracker]  ✖ couldn’t find Workspace.%s"):format(rootName))
-            continue
-        end
-
-        local resources = root:FindFirstChild("Resources")
-                       or root:WaitForChild("Resources", 5)
-        if not resources then
-            warn(("[PeltTracker]  ✖ %s.Resources missing"):format(rootName))
-            continue
-        end
-
-        -- dump what deposits we see
-        for _, deposit in ipairs(resources:GetChildren()) do
-            if deposit:IsA("Model") and deposit.Name:lower():match("deposit") then
-                print(("[PeltTracker] → Scanning deposit: %s"):format(deposit:GetFullName()))
-                
-                -- now scan every descendant under this deposit
-                for _, node in ipairs(deposit:GetDescendants()) do
-                    if node:IsA("BasePart") and node.Name:lower():match("uncut") then
-                        table.insert(gemData, node)
-                        print(("[PeltTracker]     • Found gem node: %s"):format(node:GetFullName()))
+    -- ROBUST, LOGGED GEM SCANNER
+    local function scanGems()
+        gemData = {}
+        for _, rootName in ipairs({"StaticProps", "TargetFilter"}) do
+            local root = Workspace:FindFirstChild(rootName) or Workspace:WaitForChild(rootName,5)
+            if not root then
+                warn(("[PeltTracker] ✖ couldn’t find Workspace.%s"):format(rootName))
+                continue
+            end
+            local resources = root:FindFirstChild("Resources") or root:WaitForChild("Resources",5)
+            if not resources then
+                warn(("[PeltTracker] ✖ %s.Resources missing"):format(rootName))
+                continue
+            end
+            for _, deposit in ipairs(resources:GetChildren()) do
+                if deposit:IsA("Model") and deposit.Name:lower():match("deposit") then
+                    print(("[PeltTracker] → Scanning deposit: %s"):format(deposit:GetFullName()))
+                    for _, node in ipairs(deposit:GetDescendants()) do
+                        if node:IsA("BasePart") and node.Name:lower():match("uncut") then
+                            table.insert(gemData, node)
+                            print(("[PeltTracker]     • Found gem node: %s"):format(node:GetFullName()))
+                        end
                     end
                 end
-            else
-                -- uncomment if you want to see everything that *isn’t* a deposit
-                -- print(("Skipping %s (%s)"):format(deposit.Name, deposit.ClassName))
             end
         end
+        print(("[PeltTracker] ◦ scanGems total found: %d"):format(#gemData))
+        return gemData
     end
 
-    print(("[PeltTracker] ◦ scanGems total found: %d"):format(#gemData))
-    return gemData
-end
+    -- ESP & TELEPORT for Gems
+    local function toggleGemESP(node)
+        local existing = node:FindFirstChild("__GemESP")
+        if existing then
+            existing:Destroy()
+            if tracerData[node] then
+                tracerData[node].line:Remove()
+                tracerData[node] = nil
+            end
+            return false
+        end
+        local box = Instance.new("BoxHandleAdornment", node)
+        box.Name = "__GemESP"; box.Adornee = node; box.AlwaysOnTop = true; box.ZIndex = 10
+        box.Size = node.Size * 1.2; box.Color3 = Color3.fromRGB(255,255,100); box.Transparency = 0.5
+        local cam = Workspace.CurrentCamera
+        local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+        local line = Drawing.new("Line")
+        line.Visible = true; line.Thickness = 2; line.Color = box.Color3
+        line.From = center; line.To = center
+        tracerData[node] = { box = box, line = line }
+        return true
+    end
 
-    -- UPDATE GEM LIST (with ESP + teleport)
+    -- UPDATE GEM LIST
     local function updateGemList()
         if not gemListFrame then return end
         for _, c in ipairs(gemListFrame:GetChildren()) do
@@ -398,58 +407,31 @@ end
             lbl.Font, lbl.TextSize, lbl.TextColor3 = Enum.Font.Gotham,16,Color3.new(1,1,1)
             lbl.Text = "No gems found in this server."
         else
-            for _, ore in ipairs(list) do
+            for _, node in ipairs(list) do
                 local btn = Instance.new("TextButton", gemListFrame)
                 btn.Size = UDim2.new(1,0,0,28)
                 btn.BackgroundColor3, btn.BorderSizePixel = Color3.fromRGB(45,45,45),0
                 btn.Font, btn.TextSize, btn.TextColor3 = Enum.Font.SourceSansSemibold,16,Color3.new(1,1,1)
-                btn.Text = ore.Name
+                btn.Text = node.Name
                 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
 
-                local function toggleGemESP(model)
-                    local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-                    if not part then return false end
-                    local existing = part:FindFirstChild("__GemESP")
-                    if existing then
-                        existing:Destroy()
-                        if tracerData[model] then
-                            tracerData[model].line:Remove()
-                            tracerData[model] = nil
-                        end
-                        return false
-                    end
-                    local box = Instance.new("BoxHandleAdornment", part)
-                    box.Name = "__GemESP"; box.Adornee = part; box.AlwaysOnTop = true; box.ZIndex = 10
-                    box.Size = part.Size * 1.2; box.Color3 = Color3.fromRGB(255,255,100); box.Transparency = 0.5
-                    local cam = Workspace.CurrentCamera
-                    local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
-                    local line = Drawing.new("Line")
-                    line.Visible = true; line.Thickness = 2; line.Color = box.Color3
-                    line.From = center; line.To = center
-                    tracerData[model] = {box = box, line = line}
-                    return true
-                end
-
                 btn.MouseButton1Click:Connect(function()
-                    if toggleGemESP(ore) then
-                        btn.Text = ore.Name .. "  ✅ ESP"
+                    if toggleGemESP(node) then
+                        btn.Text = node.Name .. "  ✅ ESP"
                     else
-                        btn.Text = ore.Name .. "  ❌ ESP"
+                        btn.Text = node.Name .. "  ❌ ESP"
                     end
-                    delay(1.5, function() btn.Text = ore.Name end)
+                    delay(1.5, function() btn.Text = node.Name end)
                 end)
 
                 btn.InputBegan:Connect(function(inp)
                     if inp.UserInputType == Enum.UserInputType.MouseButton2 then
                         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                            local part = ore.PrimaryPart or ore:FindFirstChildWhichIsA("BasePart")
-                            if part then
-                                hrp.CFrame = part.CFrame + Vector3.new(0,3,0)
-                            end
+                            hrp.CFrame = node.CFrame + Vector3.new(0,3,0)
                         end
-                        btn.Text = ore.Name.."  📍 TP"
-                        delay(1.5, function() btn.Text = ore.Name end)
+                        btn.Text = node.Name.."  📍 TP"
+                        delay(1.5, function() btn.Text = node.Name end)
                     end
                 end)
             end
@@ -520,54 +502,56 @@ end
             end,
         }
         for i,icon in ipairs(ctrlIcons) do
-            local b=Instance.new("TextButton", main)
-            b.Size=UDim2.new(0,28,0,28); b.Position=UDim2.new(1,-32*(i+1),0,0)
-            b.BackgroundTransparency=1; b.Font, b.TextSize, b.TextColor3=Enum.Font.GothamBold,18,Color3.new(1,1,1)
-            b.Text=icon; b.MouseButton1Click:Connect(function() ctrlFuncs[i](b) end)
+            local b = Instance.new("TextButton", main)
+            b.Size = UDim2.new(0,28,0,28); b.Position = UDim2.new(1,-32*(i+1),0,0)
+            b.BackgroundTransparency = 1; b.Font, b.TextSize, b.TextColor3 = Enum.Font.GothamBold,18,Color3.new(1,1,1)
+            b.Text = icon
+            b.MouseButton1Click:Connect(function() ctrlFuncs[i](b) end)
         end
 
         -- Tabs (rounded, no border)
         local tabs = {"Animals","Trees","Gems"}
         for i,name in ipairs(tabs) do
-            local tbtn=Instance.new("TextButton", main)
-            tbtn.Size=UDim2.new(0,100,0,24); tbtn.Position=UDim2.new(0,10+(i-1)*105,0,30)
-            tbtn.BackgroundColor3=Color3.fromRGB(45,45,45); tbtn.BorderSizePixel=0; tbtn.AutoButtonColor=false
-            tbtn.Font, tbtn.TextSize, tbtn.TextColor3=Enum.Font.GothamBold,14,Color3.new(1,1,1)
-            tbtn.Text=name; Instance.new("UICorner", tbtn).CornerRadius=UDim.new(0,6)
-            tabButtons[name]=tbtn
+            local tbtn = Instance.new("TextButton", main)
+            tbtn.Size = UDim2.new(0,100,0,24); tbtn.Position = UDim2.new(0,10+(i-1)*105,0,30)
+            tbtn.BackgroundColor3 = Color3.fromRGB(45,45,45); tbtn.BorderSizePixel = 0; tbtn.AutoButtonColor = false
+            tbtn.Font, tbtn.TextSize, tbtn.TextColor3 = Enum.Font.GothamBold,14,Color3.new(1,1,1)
+            tbtn.Text = name
+            Instance.new("UICorner", tbtn).CornerRadius = UDim.new(0,6)
+            tabButtons[name] = tbtn
             tbtn.MouseButton1Click:Connect(function()
-                currentTab=name
-                animalListFrame.Visible=(name=="Animals")
-                treeListFrame.Visible=(name=="Trees")
-                gemListFrame.Visible=(name=="Gems")
-                hdr.Text=name.." Tracker"
-                for _,b in pairs(tabButtons) do
-                    b.BackgroundColor3=(b==tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
+                currentTab = name
+                animalListFrame.Visible = (name == "Animals")
+                treeListFrame.Visible   = (name == "Trees")
+                gemListFrame.Visible    = (name == "Gems")
+                hdr.Text = name .. " Tracker"
+                for _, b in pairs(tabButtons) do
+                    b.BackgroundColor3 = (b == tbtn) and Color3.fromRGB(70,70,70) or Color3.fromRGB(45,45,45)
                 end
-                listRef = ({Animals=animalListFrame, Trees=treeListFrame, Gems=gemListFrame})[name]
+                listRef = ({ Animals = animalListFrame, Trees = treeListFrame, Gems = gemListFrame })[name]
             end)
         end
 
         -- List frames factory
         local function makeList()
-            local f=Instance.new("ScrollingFrame", main)
-            f.Size=UDim2.new(1,-16,1,-60); f.Position=UDim2.new(0,8,0,60)
-            f.BackgroundTransparency=1; f.ScrollBarThickness=6
-            Instance.new("UICorner", f).CornerRadius=UDim.new(0,6)
-            local layout=Instance.new("UIListLayout", f)
-            layout.Padding=UDim.new(0,4); layout.SortOrder=Enum.SortOrder.LayoutOrder
+            local f = Instance.new("ScrollingFrame", main)
+            f.Size = UDim2.new(1,-16,1,-60); f.Position = UDim2.new(0,8,0,60)
+            f.BackgroundTransparency = 1; f.ScrollBarThickness = 6
+            Instance.new("UICorner", f).CornerRadius = UDim.new(0,6)
+            local layout = Instance.new("UIListLayout", f)
+            layout.Padding = UDim.new(0,4); layout.SortOrder = Enum.SortOrder.LayoutOrder
             layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                f.CanvasSize=UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+8)
+                f.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 8)
             end)
             return f
         end
 
-        animalListFrame=makeList()
-        treeListFrame=makeList()
-        gemListFrame=makeList()
-        treeListFrame.Visible=false
-        gemListFrame.Visible=false
-        listRef=animalListFrame
+        animalListFrame = makeList()
+        treeListFrame  = makeList()
+        gemListFrame   = makeList()
+        treeListFrame.Visible = false
+        gemListFrame.Visible  = false
+        listRef = animalListFrame
 
         -- Initial population
         scanAll(); updateAnimalList(); updateTreeList(); updateGemList()
@@ -592,7 +576,7 @@ end
             lw = 0
             local parts = {}
             for _, pl in ipairs(Players:GetPlayers()) do
-                if pl~=LocalPlayer and pl.Character then
+                if pl ~= LocalPlayer and pl.Character then
                     local hrp = pl.Character:FindFirstChild("HumanoidRootPart")
                     if hrp then table.insert(parts, hrp.Position) end
                 end
@@ -602,42 +586,42 @@ end
                 if not btn then continue end
                 local icon = ""
                 for _, ppos in ipairs(parts) do
-                    local d=(ppos - info.torso.Position).Magnitude
-                    if d<=Settings.maxTrackDist then
-                        icon=" 🚨"
-                        if soundEnabled and lastAlertSound>=ALERT_SOUND_INTERVAL then
-                            alertSound:Play(); lastAlertSound=0
+                    local d = (ppos - info.torso.Position).Magnitude
+                    if d <= Settings.maxTrackDist then
+                        icon = " 🚨"
+                        if soundEnabled and lastAlertSound >= ALERT_SOUND_INTERVAL then
+                            alertSound:Play(); lastAlertSound = 0
                         end
                         break
-                    elseif d<=Settings.maxTrackDist*1.5 then
-                        icon=" ⚠️"
+                    elseif d <= Settings.maxTrackDist * 1.5 then
+                        icon = " ⚠️"
                     end
                 end
-                btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","")..icon
+                btn.Text = btn.Text:gsub(" 🚨",""):gsub(" ⚠️","") .. icon
             end
         end
-        if lt>=TRACE_INTERVAL then
-            lt=0
-            local cam=Workspace.CurrentCamera
-            local center=Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y/2)
+        if lt >= TRACE_INTERVAL then
+            lt = 0
+            local cam = Workspace.CurrentCamera
+            local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
             for _, data in pairs(tracerData) do
-                data.line.Visible=true
-                local pos,vis=cam:WorldToViewportPoint(data.box.Adornee.Position+Vector3.new(0,data.box.Adornee.Size.Y/2,0))
+                data.line.Visible = true
+                local pos, vis = cam:WorldToViewportPoint(data.box.Adornee.Position + Vector3.new(0, data.box.Adornee.Size.Y/2, 0))
                 if vis then
-                    data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y)
+                    data.line.From = center; data.line.To = Vector2.new(pos.X, pos.Y)
                 else
-                    data.line.Visible=false
+                    data.line.Visible = false
                 end
             end
-            for model,data in pairs(treeTracerData) do
-                data.line.Visible=true
-                local part=model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+            for model, data in pairs(treeTracerData) do
+                data.line.Visible = true
+                local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
                 if part then
-                    local pos,vis=Workspace.CurrentCamera:WorldToViewportPoint(part.Position)
+                    local pos, vis = Workspace.CurrentCamera:WorldToViewportPoint(part.Position)
                     if vis then
-                        data.line.From=center; data.line.To=Vector2.new(pos.X,pos.Y)
+                        data.line.From = center; data.line.To = Vector2.new(pos.X, pos.Y)
                     else
-                        data.line.Visible=false
+                        data.line.Visible = false
                     end
                 end
             end
@@ -646,7 +630,7 @@ end
 
     -- TOGGLE GUI with F7
     UserInputService.InputBegan:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.Keyboard and inp.KeyCode==Enum.KeyCode.F7 then
+        if inp.UserInputType == Enum.UserInputType.Keyboard and inp.KeyCode == Enum.KeyCode.F7 then
             createTrackerGui()
         end
     end)
