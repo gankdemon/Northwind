@@ -260,7 +260,7 @@ function PeltTracker.init()
         for f, info in pairs(animalData) do
             -- split on underscores so species grouping works correctly
             local parts = string.split(f.Name, "_")
-            local sp = parts[1] or f.Name
+            local sp    = parts[1] or f.Name
             groups[sp] = groups[sp] or {}
             table.insert(groups[sp], f)
         end
@@ -537,6 +537,9 @@ function PeltTracker.init()
         end
     end)
 end
+
+-- AUTO‑INIT ON LOAD
+PeltTracker.init()
 
 -- Return the module table
 return PeltTracker
